@@ -1,0 +1,627 @@
+{
+ "app": "ThaiPyBlocks",
+ "version": 1,
+ "workspace": {
+  "blocks": {
+   "languageVersion": 0,
+   "blocks": [
+    {
+     "type": "pb_comment",
+     "id": "X4:Uv7iJny~gT5P*CWB;",
+     "x": 24,
+     "y": 24,
+     "fields": {
+      "TEXT": "กิจกรรมที่ 2: ทำนายการงอกของเมล็ดด้วย Neural Network"
+     },
+     "next": {
+      "block": {
+       "type": "variables_set",
+       "id": "=ppl,a!_};?X8-$mRH*k",
+       "fields": {
+        "VAR": {
+         "id": "aOCwniJaf:T-@;tHrMQ2"
+        }
+       },
+       "inputs": {
+        "VALUE": {
+         "block": {
+          "type": "pb_read_file",
+          "id": "4Z-$2LAJp@1i((++p0OJ",
+          "fields": {
+           "FN": "pd.read_csv",
+           "FILE": "seed_germination.csv"
+          }
+         }
+        }
+       },
+       "next": {
+        "block": {
+         "type": "text_print",
+         "id": "t(F{GVgnmxOZCG63?ebt",
+         "inputs": {
+          "TEXT": {
+           "block": {
+            "type": "pb_df_view",
+            "id": ".4B,pZjM6sdbmaCCWy$_",
+            "fields": {
+             "DF": {
+              "id": "aOCwniJaf:T-@;tHrMQ2"
+             },
+             "FN": "head",
+             "N": 5
+            }
+           }
+          }
+         },
+         "next": {
+          "block": {
+           "type": "text_print",
+           "id": "CWC0RKVo^7!,W$)y6/QB",
+           "inputs": {
+            "TEXT": {
+             "block": {
+              "type": "pb_series_stat",
+              "id": "GacA!%#j7_5y)omLNne.",
+              "fields": {
+               "DF": {
+                "id": "aOCwniJaf:T-@;tHrMQ2"
+               },
+               "COL": "germinated",
+               "FN": "value_counts"
+              }
+             }
+            }
+           },
+           "next": {
+            "block": {
+             "type": "pb_plot_xy",
+             "id": "e*{7^?CPl(jNuNF4g}VW",
+             "fields": {
+              "KIND": "scatterplot",
+              "DF": {
+               "id": "aOCwniJaf:T-@;tHrMQ2"
+              },
+              "X": "temperature",
+              "Y": "humidity",
+              "HUE": "germinated",
+              "TITLE": "ถาดเพาะ 400 ถาด: งอก / ไม่งอก"
+             },
+             "next": {
+              "block": {
+               "type": "pb_comment",
+               "id": "qb?zhyHVM?KqFHsvoEsF",
+               "fields": {
+                "TEXT": "แยกฟีเจอร์ X กับคำตอบ y แล้วแบ่งชุดฝึก 75% ชุดทดสอบ 25%"
+               },
+               "next": {
+                "block": {
+                 "type": "variables_set",
+                 "id": "9j`bD_~w0gjLCqUUGzrQ",
+                 "fields": {
+                  "VAR": {
+                   "id": "PD4|a]Y9Bx9`#Dg:l[d%"
+                  }
+                 },
+                 "inputs": {
+                  "VALUE": {
+                   "block": {
+                    "type": "pb_drop_cols",
+                    "id": "kIx0t411esVU!?Aq4Bq@",
+                    "fields": {
+                     "DF": {
+                      "id": "aOCwniJaf:T-@;tHrMQ2"
+                     },
+                     "COLS": "germinated"
+                    }
+                   }
+                  }
+                 },
+                 "next": {
+                  "block": {
+                   "type": "variables_set",
+                   "id": "WhCxTb2/07!cY:cF|K=W",
+                   "fields": {
+                    "VAR": {
+                     "id": ".bT.h?K~2{7RB5)Ii(/i"
+                    }
+                   },
+                   "inputs": {
+                    "VALUE": {
+                     "block": {
+                      "type": "pb_col",
+                      "id": "u0x8)?5/6EP*t:r8!6;i",
+                      "fields": {
+                       "DF": {
+                        "id": "aOCwniJaf:T-@;tHrMQ2"
+                       },
+                       "COL": "germinated"
+                      }
+                     }
+                    }
+                   },
+                   "next": {
+                    "block": {
+                     "type": "pb_split",
+                     "id": "$k%1;ys^:|wG~#Z%++w)",
+                     "fields": {
+                      "XTR": {
+                       "id": "5+7IAa*!Lk?an7B[}B|p"
+                      },
+                      "XTE": {
+                       "id": "nR-k?cq|-0oDQLKbedVi"
+                      },
+                      "YTR": {
+                       "id": "i[b=jy}T}Vyj8c84/)xZ"
+                      },
+                      "YTE": {
+                       "id": "g{(?7*ZRmoht`2zc4pV@"
+                      },
+                      "X": {
+                       "id": "PD4|a]Y9Bx9`#Dg:l[d%"
+                      },
+                      "Y": {
+                       "id": ".bT.h?K~2{7RB5)Ii(/i"
+                      },
+                      "TS": 0.25,
+                      "RS": 42,
+                      "MODE": "stratify"
+                     },
+                     "next": {
+                      "block": {
+                       "type": "pb_comment",
+                       "id": "P7kC=GN*Mb/O+fb|S#6z",
+                       "fields": {
+                        "TEXT": "ปรับสเกล: เรียนค่าจากชุดฝึกเท่านั้น แล้วใช้ค่าเดิมแปลงชุดทดสอบ"
+                       },
+                       "next": {
+                        "block": {
+                         "type": "variables_set",
+                         "id": "j,m)tYcj}Q]?UeE0Xy$$",
+                         "fields": {
+                          "VAR": {
+                           "id": "ZGrzZ#f9BHRD*~Wm%W@/"
+                          }
+                         },
+                         "inputs": {
+                          "VALUE": {
+                           "block": {
+                            "type": "pb_scaler",
+                            "id": "3!+EcKWmEu+7O[Rw!FM(",
+                            "fields": {
+                             "CLS": "StandardScaler"
+                            }
+                           }
+                          }
+                         },
+                         "next": {
+                          "block": {
+                           "type": "variables_set",
+                           "id": "qq~`d:VaWM#+-=}sc3++",
+                           "fields": {
+                            "VAR": {
+                             "id": "5+7IAa*!Lk?an7B[}B|p"
+                            }
+                           },
+                           "inputs": {
+                            "VALUE": {
+                             "block": {
+                              "type": "pb_transform",
+                              "id": "o@;VY@8CS.Ck2;LD6Czr",
+                              "fields": {
+                               "M": {
+                                "id": "ZGrzZ#f9BHRD*~Wm%W@/"
+                               },
+                               "FN": "fit_transform",
+                               "X": {
+                                "id": "5+7IAa*!Lk?an7B[}B|p"
+                               }
+                              }
+                             }
+                            }
+                           },
+                           "next": {
+                            "block": {
+                             "type": "variables_set",
+                             "id": "mJbpW9R_A0.6yWM1zb/|",
+                             "fields": {
+                              "VAR": {
+                               "id": "nR-k?cq|-0oDQLKbedVi"
+                              }
+                             },
+                             "inputs": {
+                              "VALUE": {
+                               "block": {
+                                "type": "pb_transform",
+                                "id": "wG.U``cN3;eew!86FV{5",
+                                "fields": {
+                                 "M": {
+                                  "id": "ZGrzZ#f9BHRD*~Wm%W@/"
+                                 },
+                                 "FN": "transform",
+                                 "X": {
+                                  "id": "nR-k?cq|-0oDQLKbedVi"
+                                 }
+                                }
+                               }
+                              }
+                             },
+                             "next": {
+                              "block": {
+                               "type": "pb_comment",
+                               "id": "ay%0dRmc-s^(lGR0YK#T",
+                               "fields": {
+                                "TEXT": "โมเดลเส้นตรง (ไว้เปรียบเทียบ)"
+                               },
+                               "next": {
+                                "block": {
+                                 "type": "variables_set",
+                                 "id": "y65g}8tcs#vTxV4NeOiJ",
+                                 "fields": {
+                                  "VAR": {
+                                   "id": "BsX~r8G3{Apms-+x*w01"
+                                  }
+                                 },
+                                 "inputs": {
+                                  "VALUE": {
+                                   "block": {
+                                    "type": "pb_m_LogisticRegression",
+                                    "id": "M9j92rQRK%9}sw/7Z]__",
+                                    "inputs": {
+                                     "P_C": {
+                                      "shadow": {
+                                       "type": "math_number",
+                                       "id": "6-Fc0xX0|Y:/$xK(8hEo",
+                                       "fields": {
+                                        "NUM": 1
+                                       }
+                                      }
+                                     },
+                                     "P_MAX_ITER": {
+                                      "shadow": {
+                                       "type": "math_number",
+                                       "id": "~~8TRMe/b*Ld}N8~f*G(",
+                                       "fields": {
+                                        "NUM": 1000
+                                       }
+                                      }
+                                     }
+                                    }
+                                   }
+                                  }
+                                 },
+                                 "next": {
+                                  "block": {
+                                   "type": "pb_fit",
+                                   "id": "31(%@Y85Mz5iWFO[FC0F",
+                                   "fields": {
+                                    "M": {
+                                     "id": "BsX~r8G3{Apms-+x*w01"
+                                    },
+                                    "X": {
+                                     "id": "5+7IAa*!Lk?an7B[}B|p"
+                                    },
+                                    "Y": {
+                                     "id": "i[b=jy}T}Vyj8c84/)xZ"
+                                    }
+                                   },
+                                   "next": {
+                                    "block": {
+                                     "type": "pb_print2",
+                                     "id": "_l|gXXx}spfm{2kAXh}9",
+                                     "fields": {
+                                      "LABEL": "LogisticRegression ชุดฝึก:"
+                                     },
+                                     "inputs": {
+                                      "VAL": {
+                                       "block": {
+                                        "type": "pb_score",
+                                        "id": "56cZ)tF[NDyQ.tCx6T?}",
+                                        "fields": {
+                                         "M": {
+                                          "id": "BsX~r8G3{Apms-+x*w01"
+                                         },
+                                         "X": {
+                                          "id": "5+7IAa*!Lk?an7B[}B|p"
+                                         },
+                                         "Y": {
+                                          "id": "i[b=jy}T}Vyj8c84/)xZ"
+                                         }
+                                        }
+                                       }
+                                      }
+                                     },
+                                     "next": {
+                                      "block": {
+                                       "type": "pb_print2",
+                                       "id": "x;gdSm0X^8SqyP?D0ZyZ",
+                                       "fields": {
+                                        "LABEL": "LogisticRegression ชุดทดสอบ:"
+                                       },
+                                       "inputs": {
+                                        "VAL": {
+                                         "block": {
+                                          "type": "pb_score",
+                                          "id": "E4CzdOz~oUPjA3q!|ad2",
+                                          "fields": {
+                                           "M": {
+                                            "id": "BsX~r8G3{Apms-+x*w01"
+                                           },
+                                           "X": {
+                                            "id": "nR-k?cq|-0oDQLKbedVi"
+                                           },
+                                           "Y": {
+                                            "id": "g{(?7*ZRmoht`2zc4pV@"
+                                           }
+                                          }
+                                         }
+                                        }
+                                       },
+                                       "next": {
+                                        "block": {
+                                         "type": "pb_comment",
+                                         "id": "9;*P9Hd%yYob_7_N:ezp",
+                                         "fields": {
+                                          "TEXT": "Neural Network: ชั้นซ่อน 1 ชั้น 16 นิวรอน"
+                                         },
+                                         "next": {
+                                          "block": {
+                                           "type": "variables_set",
+                                           "id": "CoJQRNC?D!HYrU8edI,b",
+                                           "fields": {
+                                            "VAR": {
+                                             "id": "BsX~r8G3{Apms-+x*w01"
+                                            }
+                                           },
+                                           "inputs": {
+                                            "VALUE": {
+                                             "block": {
+                                              "type": "pb_m_MLPClassifier",
+                                              "id": "YH:S,ZOCOpwfYQ5x(0[4",
+                                              "fields": {
+                                               "P_HIDDEN_LAYER_SIZES": "(16,)"
+                                              },
+                                              "inputs": {
+                                               "P_MAX_ITER": {
+                                                "shadow": {
+                                                 "type": "math_number",
+                                                 "id": "5+gCr+Twk`Yc7U5nFdI~",
+                                                 "fields": {
+                                                  "NUM": 1000
+                                                 }
+                                                }
+                                               },
+                                               "P_RANDOM_STATE": {
+                                                "shadow": {
+                                                 "type": "math_number",
+                                                 "id": "n),/wLp4yn7X=?Wo9nBy",
+                                                 "fields": {
+                                                  "NUM": 42
+                                                 }
+                                                }
+                                               }
+                                              }
+                                             }
+                                            }
+                                           },
+                                           "next": {
+                                            "block": {
+                                             "type": "pb_fit",
+                                             "id": "Qo!i%$A`z`E69,vD$}3a",
+                                             "fields": {
+                                              "M": {
+                                               "id": "BsX~r8G3{Apms-+x*w01"
+                                              },
+                                              "X": {
+                                               "id": "5+7IAa*!Lk?an7B[}B|p"
+                                              },
+                                              "Y": {
+                                               "id": "i[b=jy}T}Vyj8c84/)xZ"
+                                              }
+                                             },
+                                             "next": {
+                                              "block": {
+                                               "type": "pb_print2",
+                                               "id": "{FwveMbQi#u|VymES,~1",
+                                               "fields": {
+                                                "LABEL": "MLP ชุดฝึก:"
+                                               },
+                                               "inputs": {
+                                                "VAL": {
+                                                 "block": {
+                                                  "type": "pb_score",
+                                                  "id": "ilQTh`Xp:eH?1C18cr:3",
+                                                  "fields": {
+                                                   "M": {
+                                                    "id": "BsX~r8G3{Apms-+x*w01"
+                                                   },
+                                                   "X": {
+                                                    "id": "5+7IAa*!Lk?an7B[}B|p"
+                                                   },
+                                                   "Y": {
+                                                    "id": "i[b=jy}T}Vyj8c84/)xZ"
+                                                   }
+                                                  }
+                                                 }
+                                                }
+                                               },
+                                               "next": {
+                                                "block": {
+                                                 "type": "pb_print2",
+                                                 "id": "qAzij];-Ty??$v9}5JB$",
+                                                 "fields": {
+                                                  "LABEL": "MLP ชุดทดสอบ:"
+                                                 },
+                                                 "inputs": {
+                                                  "VAL": {
+                                                   "block": {
+                                                    "type": "pb_score",
+                                                    "id": "J|c@I$NZEGMhe$4U=B|i",
+                                                    "fields": {
+                                                     "M": {
+                                                      "id": "BsX~r8G3{Apms-+x*w01"
+                                                     },
+                                                     "X": {
+                                                      "id": "nR-k?cq|-0oDQLKbedVi"
+                                                     },
+                                                     "Y": {
+                                                      "id": "g{(?7*ZRmoht`2zc4pV@"
+                                                     }
+                                                    }
+                                                   }
+                                                  }
+                                                 },
+                                                 "next": {
+                                                  "block": {
+                                                   "type": "variables_set",
+                                                   "id": "Te:9W{leMQ[HD_4wNQ#$",
+                                                   "fields": {
+                                                    "VAR": {
+                                                     "id": "d9+nghAE[H-Qew((M0Hu"
+                                                    }
+                                                   },
+                                                   "inputs": {
+                                                    "VALUE": {
+                                                     "block": {
+                                                      "type": "pb_predict",
+                                                      "id": "NNT4pwa$Sx7Db_93#z6l",
+                                                      "fields": {
+                                                       "M": {
+                                                        "id": "BsX~r8G3{Apms-+x*w01"
+                                                       },
+                                                       "FN": "predict",
+                                                       "X": {
+                                                        "id": "nR-k?cq|-0oDQLKbedVi"
+                                                       }
+                                                      }
+                                                     }
+                                                    }
+                                                   },
+                                                   "next": {
+                                                    "block": {
+                                                     "type": "pb_plot_cm",
+                                                     "id": "heQr`#aeY{/`hl`=x-DG",
+                                                     "fields": {
+                                                      "YT": {
+                                                       "id": "g{(?7*ZRmoht`2zc4pV@"
+                                                      },
+                                                      "YP": {
+                                                       "id": "d9+nghAE[H-Qew((M0Hu"
+                                                      }
+                                                     },
+                                                     "next": {
+                                                      "block": {
+                                                       "type": "text_print",
+                                                       "id": "A{lO([KJO$VqYLfegKVh",
+                                                       "inputs": {
+                                                        "TEXT": {
+                                                         "block": {
+                                                          "type": "pb_report",
+                                                          "id": "`BGt76]LrHmiU_;ApA`Q",
+                                                          "fields": {
+                                                           "YT": {
+                                                            "id": "g{(?7*ZRmoht`2zc4pV@"
+                                                           },
+                                                           "YP": {
+                                                            "id": "d9+nghAE[H-Qew((M0Hu"
+                                                           }
+                                                          }
+                                                         }
+                                                        }
+                                                       }
+                                                      }
+                                                     }
+                                                    }
+                                                   }
+                                                  }
+                                                 }
+                                                }
+                                               }
+                                              }
+                                             }
+                                            }
+                                           }
+                                          }
+                                         }
+                                        }
+                                       }
+                                      }
+                                     }
+                                    }
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  "variables": [
+   {
+    "name": "df",
+    "id": "aOCwniJaf:T-@;tHrMQ2"
+   },
+   {
+    "name": "X",
+    "id": "PD4|a]Y9Bx9`#Dg:l[d%"
+   },
+   {
+    "name": "y",
+    "id": ".bT.h?K~2{7RB5)Ii(/i"
+   },
+   {
+    "name": "X_train",
+    "id": "5+7IAa*!Lk?an7B[}B|p"
+   },
+   {
+    "name": "X_test",
+    "id": "nR-k?cq|-0oDQLKbedVi"
+   },
+   {
+    "name": "y_train",
+    "id": "i[b=jy}T}Vyj8c84/)xZ"
+   },
+   {
+    "name": "y_test",
+    "id": "g{(?7*ZRmoht`2zc4pV@"
+   },
+   {
+    "name": "scaler",
+    "id": "ZGrzZ#f9BHRD*~Wm%W@/"
+   },
+   {
+    "name": "model",
+    "id": "BsX~r8G3{Apms-+x*w01"
+   },
+   {
+    "name": "y_pred",
+    "id": "d9+nghAE[H-Qew((M0Hu"
+   }
+  ]
+ }
+}

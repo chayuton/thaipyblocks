@@ -1,0 +1,112 @@
+<title>ThaiPyBlocks</title>
+<meta name="description" content="ต่อบล็อกเป็นโปรแกรม Python วิเคราะห์ข้อมูลและสร้างโมเดล Machine Learning พร้อมแปลคำสั่งเป็นภาษาไทย">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+/*__CSS__*/</style>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><i></i><i></i></div>
+      <div class="brand-name">Thai<span>Py</span>Blocks</div>
+    </div>
+    <div class="tb-group hide-phone">
+      <button class="btn btn-ghost" type="button" data-act="samples" id="btn-samples"><!--I:book--> ตัวอย่าง</button>
+      <button class="btn" type="button" data-act="wizard"><!--I:wand--> ตัวช่วยเลือกโมเดล</button>
+      <button class="btn" type="button" data-act="clean" title="ตัวช่วยทำความสะอาดข้อมูลและปรับสเกล (Cleansing & Normalize)"><!--I:broom--> <span class="tb-lbl">ทำความสะอาดข้อมูล</span></button>
+      <button class="btn btn-ghost" type="button" data-act="data" title="ข้อมูลของฉัน"><!--I:data--> <span class="tb-lbl-md">ข้อมูลของฉัน</span></button>
+      <button class="btn btn-ghost" type="button" data-act="exercises" title="แบบฝึกหัด"><!--I:task--> <span class="tb-lbl-md">แบบฝึกหัด</span></button>
+    </div>
+    <div class="tb-spacer"></div>
+    <div class="tb-group">
+      <button class="btn btn-ghost icon-btn show-phone" type="button" data-act="samples" aria-label="โครงงานตัวอย่าง"><!--I:book--></button>
+      <button class="btn btn-ghost icon-btn show-phone" type="button" data-act="wizard" aria-label="ตัวช่วยเลือกโมเดล"><!--I:wand--></button>
+      <button class="btn btn-ghost icon-btn show-phone" type="button" data-act="data" aria-label="ข้อมูลของฉัน"><!--I:data--></button>
+      <button class="btn hide-phone" type="button" data-act="step" title="รันทีละบล็อกพร้อมไฮไลต์"><!--I:step--> ทีละขั้น</button>
+      <button class="btn btn-run" type="button" data-act="run" title="รัน (Ctrl+Enter)"><!--I:play--> รัน</button>
+      <button class="btn btn-stop" type="button" data-act="stop" hidden><!--I:stop--> หยุด</button>
+      <button class="btn btn-ghost lang-btn" type="button" data-act="lang" title="เปลี่ยนภาษาเป็น English" aria-label="เปลี่ยนภาษาเป็น English" data-en="ไทย">EN</button>
+      <button class="btn btn-ghost icon-btn" type="button" data-act="more" aria-label="เมนูเพิ่มเติม"><!--I:more--></button>
+    </div>
+  </header>
+  <main class="studio" data-view="blocks">
+    <section class="pane pane-blocks" aria-label="พื้นที่ต่อบล็อก">
+      <div id="blockly"></div>
+      <div class="run-badge" id="run-badge" hidden><i class="spin"></i><span>กำลังรัน…</span><div class="bar" hidden><i></i></div></div>
+      <div class="canvas-tools">
+        <button class="btn" type="button" data-act="zoom-in" aria-label="ขยาย"><!--I:plus--></button>
+        <button class="btn" type="button" data-act="zoom-out" aria-label="ย่อ"><!--I:minus--></button>
+        <button class="btn" type="button" data-act="center" aria-label="ดูทั้งหมด"><!--I:center--></button>
+        <button class="btn" type="button" data-act="tidy" aria-label="จัดเรียงบล็อก"><!--I:tidy--></button>
+      </div>
+      <div class="ex-bar" id="ex-bar" hidden></div>
+      <div class="inspector" id="inspector" aria-live="polite"></div>
+    </section>
+    <div class="splitter" role="separator" aria-orientation="vertical" aria-label="ลากเพื่อปรับขนาดแผง"></div>
+    <section class="pane pane-side" aria-label="ผลลัพธ์และโค้ด">
+      <nav class="tabs" role="tablist">
+        <button class="tab" type="button" role="tab" data-panel="task" hidden>โจทย์ <span class="count" id="ex-count"></span></button>
+        <button class="tab" type="button" role="tab" data-panel="out">ผลลัพธ์ <span class="count err" data-err-badge hidden>!</span></button>
+        <button class="tab" type="button" role="tab" data-panel="code">โค้ด Python</button>
+        <button class="tab" type="button" role="tab" data-panel="translate">แปลคำสั่ง</button>
+        <button class="tab" type="button" role="tab" data-panel="vars">ตัวแปร</button>
+      </nav>
+      <div class="panel" data-panel="task" role="tabpanel" hidden>
+        <div id="task-body"></div>
+      </div>
+      <div class="panel" data-panel="out" role="tabpanel">
+        <div class="panel-head">
+          <div class="status" id="run-status"><span class="dot"></span><span>พร้อมรัน</span></div>
+          <div class="grow"></div>
+          <button class="btn btn-sm" type="button" data-act="pdf" data-needs="downloads" hidden title="บันทึกหน้าผลลัพธ์ (ตาราง กราฟ ข้อความ) เป็นไฟล์ PDF ขนาด A4 สำหรับพิมพ์หรือส่งงาน"><!--I:pdf--> PDF</button>
+          <button class="btn btn-sm" type="button" data-act="report" data-needs="downloads" hidden aria-label="รายงาน HTML" title="บันทึกผลลัพธ์ กราฟ คำอธิบาย และโค้ดเป็นไฟล์ HTML ไฟล์เดียว"><!--I:report--><span class="oh-full">รายงาน<span class="hide-phone"> HTML</span></span></button>
+          <button class="btn btn-sm btn-ghost" type="button" data-act="clear-out" aria-label="ล้างผลลัพธ์"><span>ล้าง<span class="oh-full" data-en=" results">ผลลัพธ์</span></span></button>
+        </div>
+        <div class="panel-body" id="out-body">
+          <div class="empty-state"><h3>ผลลัพธ์จะแสดงที่นี่</h3>กด ▶ รัน แล้วตาราง ค่าตัววัด และกราฟจากโปรแกรมจะเรียงลงมาเหมือนโน้ตบุ๊ก Jupyter</div>
+        </div>
+      </div>
+      <div class="panel" data-panel="code" role="tabpanel" hidden>
+        <div class="panel-head">
+          <label class="muted" for="code-comments">คอมเมนต์</label>
+          <select class="select" id="code-comments"><option value="th">ภาษาไทย</option><option value="en">English</option><option value="none">ไม่มี</option></select>
+          <span class="muted" id="code-lines"></span>
+          <div class="grow"></div>
+          <button class="btn btn-sm" type="button" data-act="copy-code"><!--I:copy--> คัดลอก</button>
+          <button class="btn btn-sm btn-accent" type="button" data-act="zip" data-needs="downloads" hidden><!--I:download--> .py + .ipynb</button>
+        </div>
+        <div class="code-note">คลิกบรรทัดเพื่อไปที่บล็อกนั้น · โค้ดนี้รันได้จริงใน Python 3 (Colab, Jupyter, VS Code)</div>
+        <div class="code" id="code-view"></div>
+      </div>
+      <div class="panel" data-panel="translate" role="tabpanel" hidden>
+        <div class="panel-head">
+          <div class="seg" role="group" aria-label="รูปแบบการแปล"><button type="button" data-tr-mode="steps" aria-pressed="true">ทีละขั้น</button><button type="button" data-tr-mode="flow" aria-pressed="false">ผังงาน</button><button type="button" data-tr-mode="ai" aria-pressed="false">ภาษาอื่น</button></div>
+          <div class="grow"></div>
+          <div class="seg" role="group" aria-label="ภาษาคำอธิบาย"><button type="button" data-tr-lang="th" aria-pressed="true">ไทย</button><button type="button" data-tr-lang="en" aria-pressed="false">EN</button></div>
+        </div>
+        <div id="tr-body"></div>
+      </div>
+      <div class="panel" data-panel="vars" role="tabpanel" hidden>
+        <div class="panel-head"><span class="muted">ตัวแปรทั้งหมดหลังรันล่าสุด · แตะแถวตารางเพื่อดูข้อมูล</span></div>
+        <div id="vars-body"></div>
+      </div>
+    </section>
+  </main>
+  <nav class="mnav" aria-label="มุมมอง">
+    <button type="button" data-view="task" hidden><!--I:task--><span>โจทย์</span></button>
+    <button type="button" data-view="blocks"><!--I:blocks--><span>บล็อก</span></button>
+    <button type="button" data-view="out"><!--I:out--><span>ผลลัพธ์</span><span class="badge" data-err-badge hidden>!</span></button>
+    <button type="button" data-view="code"><!--I:code--><span>Python</span></button>
+    <button type="button" data-view="translate"><!--I:translate--><span>แปล</span></button>
+    <button type="button" data-view="vars"><!--I:vars--><span>ตัวแปร</span></button>
+  </nav>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/blockly_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/blocks_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/python_compressed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/msg/en.js"></script>
+<script>window.PB_MSG_EN = Object.assign({}, Blockly.Msg);</script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@13.3.0/msg/th.js"></script>
+<script>
+/*__JS__*/</script>

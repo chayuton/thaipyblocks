@@ -1,0 +1,13 @@
+# the same bytes on every computer: build.py rebuilds index.html byte-for-byte and the tests compare files exactly
+* text=auto eol=lf
+# data files stay exactly as they are (test/files/shop_messy.csv has Windows line endings on purpose)
+*.csv -text
+*.pdf binary
+*.png binary
+*.xlsx binary
+
+# generated files: index.html (python3 build.py), src/data.js and src/thai_dict.js (sample data and the Thai dictionary)
+# are kept out of GitHub's language statistics and their diffs are collapsed
+index.html linguist-generated=true
+src/data.js linguist-generated=true
+src/thai_dict.js linguist-generated=true

@@ -1,0 +1,22 @@
+# build output of python3 build.py · index.html next to build.py is the app itself and IS committed
+dist/
+
+# test tools: npm ci in vendor/ (Blockly, SheetJS and the web fonts for the test browser) and test outputs
+vendor/node_modules/
+/js.json
+/py.json
+/s_js.json
+/s_py.json
+.pytest_cache/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

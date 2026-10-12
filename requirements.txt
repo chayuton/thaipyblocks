@@ -1,0 +1,15 @@
+# ThaiPyBlocks — Python packages for the test suites: the versions the in-browser engine is checked against
+#   pip install -r requirements.txt
+#   python3 -m playwright install chromium
+# (build.py itself needs only the Python standard library)
+pandas==3.0.2
+numpy==2.5.3
+scikit-learn==1.8.0
+scipy==1.18.1
+matplotlib==3.11.2
+seaborn==0.13.2
+openpyxl==3.1.5
+pythainlp==5.3.8
+playwright==1.56.0
+# test/pdf_test.py reads the exported PDFs; worksheets/make_worksheet_pdf.py assembles the worksheet PDFs
+pypdf==6.20.0
