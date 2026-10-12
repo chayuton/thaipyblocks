@@ -145,7 +145,8 @@ python3 -m playwright install chromium
 sh test/run_all.sh
 ```
 
-หรือรันทีละชุด เช่น `python3 build.py` แล้ว `python3 test/pages_test.py` (ทุกชุดเปิด `dist/test.html` ที่ `build.py` สร้าง)
+หรือรันทีละชุด เช่น `python3 build.py && python3 test/ux_test.py` · ชุดที่เปิดเบราว์เซอร์ใช้ `dist/test.html` ที่ `build.py` สร้าง
+ยกเว้น `pages_test.py` ที่เปิด `index.html` ผ่านเว็บเซิร์ฟเวอร์แบบเดียวกับ GitHub Pages
 
 | ชุดทดสอบ (`test/`) | ตรวจอะไร | ผลก่อนเผยแพร่ |
 | --- | --- | --- |
