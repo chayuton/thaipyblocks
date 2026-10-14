@@ -9,6 +9,14 @@ vendor/node_modules/
 /s_py.json
 .pytest_cache/
 
+# teacher-only worksheet materials: kept out of this public repository (they can sit in a local copy without being committed)
+worksheets/answer_key.pdf
+worksheets/worksheets_all.pdf
+worksheets/solution_*.json
+worksheets/make_worksheet_pdf.py
+worksheets/TEACHER_README.md
+test/worksheet_test.py
+
 # Python
 __pycache__/
 *.pyc
