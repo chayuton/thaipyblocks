@@ -11,5 +11,5 @@ seaborn==0.13.2
 openpyxl==3.1.5
 pythainlp==5.3.8
 playwright==1.56.0
-# test/pdf_test.py reads the exported PDFs; worksheets/make_worksheet_pdf.py assembles the worksheet PDFs
+# test/pdf_test.py reads the exported PDFs
 pypdf==6.20.0

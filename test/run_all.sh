@@ -53,7 +53,6 @@ expect py_check "python failures: 0"
 for t in upload_test wizard_modes exercises_test clean_test report_test; do
   run "$t" "$PY" "test/$t.py"; expect "$t" "failures: []"
 done
-run worksheet_test "$PY" test/worksheet_test.py           # the worksheet answer keys and 11 student experiments
 if command -v qpdf > /dev/null && command -v pdftoppm > /dev/null; then
   run pdf_test "$PY" test/pdf_test.py; all_passed pdf_test
 else

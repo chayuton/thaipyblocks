@@ -35,7 +35,7 @@ The whole app is one static page, ready for GitHub Pages. This repository also h
 
 ---
 
-## ใบงานสำหรับผู้สอน (โฟลเดอร์ `worksheets/`)
+## ใบงาน (โฟลเดอร์ `worksheets/`)
 
 ใบงาน 2 กิจกรรมให้นักศึกษาต่อบล็อกเอง แบ่งข้อมูลเป็นชุดฝึก (train) กับชุดทดสอบ (test) แล้วตรวจโมเดลกับข้อมูลที่โมเดลไม่เคยเห็น
 ข้อมูลทั้งสองชุดเป็นข้อมูลสมมติที่สร้างขึ้นเพื่อการสอน
@@ -45,13 +45,10 @@ The whole app is one static page, ready for GitHub Pages. This repository also h
 | [ใบงานที่ 1 K-Means](https://chayuton.github.io/thaipyblocks/worksheets/worksheet1_kmeans.pdf) (A4 6 หน้า) | จัดกลุ่มลูกค้าห้าง 200 คน: หาจำนวนกลุ่มด้วยกราฟ elbow วัด Silhouette กับชุดทดสอบ จัดกลุ่มลูกค้าใหม่ |
 | [ใบงานที่ 2 Neural Network](https://chayuton.github.io/thaipyblocks/worksheets/worksheet2_neural_network.pdf) (A4 5 หน้า) | ทำนายการงอกของเมล็ดจากอุณหภูมิและความชื้น: เทียบ LogisticRegression กับ MLPClassifier |
 | [ข้อมูล mall_customers.csv](https://chayuton.github.io/thaipyblocks/worksheets/mall_customers.csv) · [seed_germination.csv](https://chayuton.github.io/thaipyblocks/worksheets/seed_germination.csv) | ให้นักศึกษาดาวน์โหลด แล้วอัปโหลดในแอป (ปุ่ม "ข้อมูลของฉัน") |
-| [เฉลยสำหรับผู้สอน](https://chayuton.github.io/thaipyblocks/worksheets/answer_key.pdf) · [รวมทุกฉบับ](https://chayuton.github.io/thaipyblocks/worksheets/worksheets_all.pdf) | ค่าที่ควรได้ทุกตาราง กราฟที่ควรเห็น แนวคำตอบ · ไฟล์รวมมีบุ๊กมาร์กแต่ละส่วน |
-| `solution_kmeans.json` · `solution_neural_network.json` | เฉลยบล็อก เปิดในแอปที่เมนู ⋯ → เปิดโครงงาน แล้วกด ▶ รัน |
 
-รายละเอียด ผลที่ควรได้ และวิธีสร้างไฟล์ใหม่อยู่ใน [worksheets/README.md](worksheets/README.md)
-ลิงก์ในตารางใช้ได้เมื่อเปิด GitHub Pages แล้ว (ถ้าติดตั้งใน repo ของตัวเอง ให้เปลี่ยน `chayuton` เป็นชื่อผู้ใช้ของคุณ)
-**ข้อควรรู้:** repo แบบ Public ทุกคนเปิดไฟล์เฉลยได้ ถ้าไม่ต้องการให้นักศึกษาเห็น ให้ลบ `answer_key.pdf`, `worksheets_all.pdf` และ `solution_*.json`
-ออกจาก repo ที่ใช้สอน แล้วเก็บไว้ในเครื่องผู้สอน
+รายละเอียดอยู่ใน [worksheets/README.md](worksheets/README.md) · ลิงก์ในตารางใช้ได้เมื่อเปิด GitHub Pages แล้ว
+(ถ้าติดตั้งใน repo ของตัวเอง ให้เปลี่ยน `chayuton` เป็นชื่อผู้ใช้ของคุณ)
+เฉลยสำหรับผู้สอน (ไฟล์ PDF เฉลย ไฟล์เฉลยบล็อก และสคริปต์ที่สร้างใบงานกับเฉลย) เก็บแยกไว้กับผู้สอน ไม่ได้เผยแพร่ใน repo นี้
 
 ---
 
@@ -69,7 +66,7 @@ The whole app is one static page, ready for GitHub Pages. This repository also h
 
 1. ดาวน์โหลด `thaipyblocks-v1.0.0.zip` จาก [Releases](https://github.com/chayuton/thaipyblocks/releases/tag/v1.0.0) แล้วแตกไฟล์ จะได้โฟลเดอร์ `thaipyblocks`
 2. ที่ github.com กด **New** (หรือ **+ → New repository**) ตั้งชื่อ เช่น `thaipyblocks` เลือก **Public** แล้วกด **Create repository**
-3. หน้าเว็บของ GitHub อัปโหลดได้ครั้งละไม่เกิน 100 ไฟล์ ชุดนี้มีประมาณ 110 ไฟล์ จึงอัปโหลด 2 รอบ
+3. หน้าเว็บของ GitHub อัปโหลดได้ครั้งละไม่เกิน 100 ไฟล์ ชุดนี้มีประมาณ 105 ไฟล์ จึงอัปโหลด 2 รอบ
    (ลิงก์ **uploading an existing file** หรือ **Add file → Upload files**) ใช้ Chrome, Edge หรือ Firefox
    - **รอบที่ 1** เปิดโฟลเดอร์ `thaipyblocks` เลือกทุกอย่าง **ยกเว้นโฟลเดอร์ `test`** ลากไปวางในหน้า repo แล้วกด **Commit changes**
    - **รอบที่ 2** ลากโฟลเดอร์ `test` ไปวาง แล้วกด **Commit changes** (ถ้าไม่ต้องการชุดทดสอบ ข้ามรอบนี้ได้ แอปทำงานครบโดยไม่ต้องมี `test`)
@@ -158,7 +155,6 @@ sh test/run_all.sh
 | `exercises_test.py` | แบบฝึกหัด: โจทย์เริ่มต้นไม่ผ่าน เฉลยผ่าน และโค้ดของเฉลยรันใน Python | 21/21 |
 | `clean_test.py` | ตัวช่วยทำความสะอาดข้อมูลและบล็อกหมวดทำความสะอาด: ทุกบรรทัดที่พิมพ์ตรงกับ pandas | 24/24 (3 บรรทัดต่างเฉพาะเศษทศนิยมระดับ 1e-16) |
 | `report_test.py` | รายงาน HTML และชุดโค้ด .zip ของโครงงานตัวอย่าง | ผ่าน |
-| `worksheet_test.py` | เฉลยใบงานทั้งสองและการทดลองตามใบงานอีก 11 แบบ เทียบกับ scikit-learn | 13/13 |
 | `pdf_test.py` | ส่งออก PDF: หน้า A4 ถูกต้อง ค้นหาข้อความไทยได้ ธีมมืด จอมือถือ เบราว์เซอร์รุ่นเก่า | 43/43 |
 | `ux_test.py` | ใช้งานจริง: ดาวน์โหลด แก้บล็อก undo ลากบล็อก รันทีละขั้น ตัวช่วยผ่านการคลิก ข้อผิดพลาดภาษาไทย | 52/52 |
 | `columns_test.py` | รู้คอลัมน์ของทุกตารางก่อนรัน และตัวเลือกตาราง/คอลัมน์ในบล็อก | 85/85 |
@@ -197,7 +193,7 @@ python3 build.py      # เขียน index.html ใหม่ (และ dist/
 | `src/i18n_en.js` | คำแปลภาษาอังกฤษของทุกข้อความบนหน้าจอ |
 | `data/` | ชุดข้อมูลตัวอย่างเป็น CSV และสคริปต์ที่สร้าง `src/data.js` (`prep.py`) และ `src/thai_dict.js` (`thai_dict.py` ต้องมี pythainlp) |
 | `test/` | ชุดทดสอบ (หัวข้อด้านบน) · `test/files/` ไฟล์ตัวอย่างสำหรับทดสอบการอัปโหลด · `test/shots.py` ถ่ายภาพหน้าจอ |
-| `worksheets/` | ใบงาน K-Means / Neural Network: PDF ข้อมูล เฉลย และสคริปต์สร้างใหม่ |
+| `worksheets/` | ใบงาน K-Means / Neural Network สำหรับนักศึกษา: PDF ข้อมูล CSV และสคริปต์สร้างข้อมูล |
 | `vendor/package.json`, `vendor/package-lock.json` | รุ่นของ Blockly, SheetJS และฟอนต์ที่ชุดทดสอบใช้ (`npm ci`) |
 | `requirements.txt` | แพ็กเกจ Python รุ่นที่ใช้ตรวจผล (สำหรับชุดทดสอบเท่านั้น) |
 | `docs/screenshot.png` | ภาพหน้าจอใน README (`python3 test/shots.py docs readme` สร้างใหม่) |
