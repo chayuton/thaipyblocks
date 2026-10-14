@@ -21,7 +21,6 @@
   ที่ใช้ทดสอบ (`npm ci`) · `requirements.txt` แพ็กเกจ Python รุ่นที่ใช้ตรวจผล
 - README สำหรับติดตั้งบน GitHub · บันทึกนี้ · `THIRD_PARTY_NOTICES.md` ที่มาและสัญญาอนุญาตของส่วนประกอบ · ภาพหน้าจอ `docs/screenshot.png`
 - `.nojekyll` ให้ GitHub Pages ส่งไฟล์ตามเดิม · `.gitattributes` ระบุไฟล์ที่สร้างอัตโนมัติ และให้ทุกเครื่องได้ไฟล์ตรงกันทุกไบต์
-- `.github/workflows/static.yml` ส่งเว็บขึ้น GitHub Pages ทุกครั้งที่ push ไปที่ `main`
 
 **ไม่รวมในชุดนี้** (การติดตั้งแบบอื่น ไม่จำเป็นต่อการใช้งานบน GitHub Pages)
 - ThaiPyBlocks API (FastAPI ต้องมีเซิร์ฟเวอร์ Python) และชุดทดสอบของ API · Docker · สคริปต์ขึ้น Google Cloud / Oracle Cloud
