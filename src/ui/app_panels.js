@@ -312,6 +312,13 @@
     });
     document.body.appendChild(inp); inp.click();
   };
+  /* blocks that load data: on an empty workspace they become the program and run, otherwise they go below it */
+  A.addData = (prog, note) => {
+    if (!A.ws.getTopBlocks(false).length && !(A.ex && A.ex.active)) A.loadProgram(prog, { run: true });
+    else { A.appendProgram(prog); U.toast(note); }
+  };
+  const headOf = (v) => PB.R.print(PB.R.b('pb_df_view', { DF: { name: v }, FN: 'head', N: 5 }));
+  const DTYPE_TH = { table: TR('ตาราง'), text: TR('ข้อความ'), timeseries: TR('อนุกรมเวลา'), image: TR('รูปภาพ') };
   A.openData = () => {
     const list = h('div', { class: 'file-list' });
     const drop = h('div', { class: 'file-drop' }, h('b', {}, TR('ลากไฟล์มาวางที่นี่ หรือเลือกไฟล์')), h('span', { class: 'muted' }, TR('รองรับ CSV, TSV, Excel (.xlsx), JSON · ภาษาไทย UTF-8 และ TIS-620 · ไฟล์อยู่ในเครื่องคุณเท่านั้น ไม่ถูกอัปโหลดไปไหน')), h('button', { class: 'btn btn-accent', onclick: () => A.pickFile() }, U.icon('upload'), TR('เลือกไฟล์')));
@@ -320,7 +327,7 @@
     drop.addEventListener('drop', async (e) => { e.preventDefault(); for (const f of e.dataTransfer.files) { try { await A.readFile(f); } catch (err) { U.alert(TR('อ่าน ') + f.name + TR(' ไม่สำเร็จ: ') + (err.thai || err.message)); } } render(); });
     const render = () => {
       list.textContent = '';
-      if (!PB.files.size) { list.appendChild(h('div', { class: 'muted' }, TR('ยังไม่มีไฟล์ของคุณ ลองใช้ข้อมูลตัวอย่างในตัวช่วยเลือกโมเดลก่อนก็ได้'))); return; }
+      if (!PB.files.size) { list.appendChild(h('div', { class: 'muted' }, TR('ยังไม่มีไฟล์ของคุณ อัปโหลดไฟล์ด้านบน หรือเลือกชุดข้อมูลตัวอย่างด้านล่าง'))); return; }
       for (const [name, f] of PB.files) {
         const df = f.df;
         const types = df.columns.slice(0, 8).map((c) => h('span', { class: 'chip' }, c, h('small', {}, PB.dtypeLabel(df.dtypeOf(c)))));
@@ -329,7 +336,7 @@
           h('div', { class: 'chips' }, types, df.ncols > 8 ? h('span', { class: 'muted' }, `+${df.ncols - 8}`) : null),
           A.renderTable(df.head(5)),
           h('div', { class: 'field-row' },
-            h('button', { class: 'btn btn-sm', onclick: () => { A.appendProgram(PB.R.program([PB.R.set('df', PB.R.b('pb_read_file', { FN: 'pd.read_csv', FILE: name })), PB.R.print(PB.R.b('pb_df_view', { DF: { name: 'df' }, FN: 'head', N: 5 }))])); m.close(); U.toast(TR('เพิ่มบล็อกอ่านไฟล์ไว้ท้ายพื้นที่ทำงานแล้ว')); } }, TR('เพิ่มบล็อกอ่านไฟล์')),
+            h('button', { class: 'btn btn-sm', onclick: () => { m.close(); A.addData(PB.R.program([PB.R.set('df', PB.R.b('pb_read_file', { FN: 'pd.read_csv', FILE: name })), headOf('df')]), TR('เพิ่มบล็อกอ่านไฟล์ไว้ท้ายพื้นที่ทำงานแล้ว')); } }, TR('เพิ่มบล็อกอ่านไฟล์')),
             h('button', { class: 'btn btn-sm btn-accent', onclick: () => { m.close(); A.openWizard({ file: name }); } }, U.icon('wand'), TR('วิเคราะห์ด้วยตัวช่วยเลือกโมเดล')),
             h('button', { class: 'btn btn-sm', onclick: () => { m.close(); A.openWizard({ file: name, task: 'clean' }); } }, U.icon('broom'), TR('ทำความสะอาดไฟล์นี้')),
             h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { PB.files.delete(name); render(); } }, TR('นำออก'))));
@@ -338,7 +345,14 @@
     };
     A.dataDialogRefresh = render;
     render();
-    const m = U.modal({ title: TR('ข้อมูลของฉัน'), body: h('div', {}, drop, list), onClose: () => { A.dataDialogRefresh = null; } });
+    /* the datasets built into the app, for starting without a file of your own */
+    const samples = h('section', { class: 'data-samples' },
+      h('h3', {}, TR('ชุดข้อมูลตัวอย่างในแอป')),
+      h('p', { class: 'muted' }, TR('ไม่ต้องอัปโหลด เลือกแล้วแอปจะเพิ่มบล็อกโหลดข้อมูลและแสดง 5 แถวแรกให้')),
+      h('div', { class: 'opt-grid' }, Object.entries(PB.DATASETS).map(([key, d]) => h('button', { type: 'button', class: 'opt', 'data-dataset': key, title: d.desc,
+        onclick: () => { m.close(); A.addData(PB.R.program([PB.R.set('df', PB.R.b('pb_dataset', { NAME: key })), headOf('df')]), TR('เพิ่มบล็อกโหลดข้อมูลไว้ท้ายพื้นที่ทำงานแล้ว')); } },
+        h('b', {}, d.title), h('small', {}, TR`${key} · ${d.rows.toLocaleString()} แถว · ${DTYPE_TH[d.type] || d.type}`)))));
+    const m = U.modal({ title: TR('ข้อมูลของฉัน'), body: h('div', {}, drop, list, samples), onClose: () => { A.dataDialogRefresh = null; } });
   };
 
   /* ======================= model wizard ======================= */
@@ -690,8 +704,14 @@
     '-',
     { title: TR('รันทีละขั้นช้า ๆ'), sub: TR`ตอนนี้ ${A.stepDelay} มิลลิวินาที/ขั้น`, run: () => { A.stepDelay = A.stepDelay >= 900 ? 250 : A.stepDelay + 300; U.toast(TR`ความเร็วทีละขั้น: ${A.stepDelay} มิลลิวินาที`); } },
     { title: TR('จัดเรียงบล็อก'), run: () => A.ws.cleanUp() },
-    { title: TR('ล้างพื้นที่ทำงาน'), sub: TR('ลบบล็อกทั้งหมด'), run: () => U.confirm(TR('ลบบล็อกทั้งหมดในพื้นที่ทำงาน?'), (ok) => { if (ok) { A.ws.clear(); A.out.clear(); A.vars = null; } }, TR('ลบทั้งหมด')) },
+    { title: TR('ล้างพื้นที่ทำงาน'), sub: TR('ลบบล็อกทั้งหมด แล้วกลับไปหน้าเริ่มต้น'), run: () => U.confirm(TR('ลบบล็อกทั้งหมดในพื้นที่ทำงาน?'), (ok) => {
+      if (!ok) return;
+      A.ws.clear(); A.out.clear(); A.vars = null; A.lastError = null; A.setErrorBadge(false); A.setStatus('', TR('พร้อมรัน'));
+      if (A.refreshVars) A.refreshVars();
+      if (A.start) A.start.reset();
+    }, TR('ลบทั้งหมด')) },
   ], { alignRight: true });
+  A.openProject = () => openProject();
   function openProject() {
     const inp = h('input', { type: 'file', accept: '.json', style: { display: 'none' } });
     inp.addEventListener('change', async () => {
@@ -732,22 +752,15 @@
     /* files uploaded before switching language come back with the page */
     const kept = await PB.i18n.restoreFiles();
     if (kept) U.toast(TR`ไฟล์ที่อัปโหลดไว้ ${kept} ไฟล์ยังอยู่ครบ`);
-    const draft = U.store.get('pyblocks.draft.v2');
-    let loaded = false;
-    if (draft && draft.state && draft.state.blocks && draft.state.blocks.blocks && draft.state.blocks.blocks.length) {
-      try { A.loadProgram(draft.state); loaded = true; } catch (e) { loaded = false; }
-    }
-    if (!loaded) A.loadProgram(PB.SAMPLES[0].build());
+    /* a new tab or visit opens on the start screen with a blank workspace (the saved work is offered there);
+       a reload or a language switch in this tab brings back the program or exercise that was open */
+    A.blankStart = true;
+    A.start.init();
+    const reopen = A.start.reopening();
+    if (reopen) A.restoreWork();
     A.onSelect(null);
-    /* reopen the exercise that was open before the page was reloaded */
-    const resumed = A.exResume ? A.exResume() : false;
     document.body.classList.add('ready');
-    const missing = [...new Set(A.ws.getAllBlocks(false).filter((b) => b.type === 'pb_read_file').map((b) => b.getFieldValue('FILE')).filter((n) => n && !PB.files.has(n)))];
-    if (resumed) { /* exercise mode: wait for "ตรวจคำตอบ" */ }
-    else if (missing.length) {
-      A.out.clear();
-      A.out.note(TR`เปิดโครงงานล่าสุดแล้ว โครงงานนี้อ่านไฟล์ ${missing.join(', ')} ซึ่งต้องอัปโหลดใหม่ทุกครั้งที่เปิดหน้า (ไฟล์อยู่ในเครื่องคุณเท่านั้น) กด "ข้อมูลของฉัน" เพื่ออัปโหลด แล้วกด ▶ รัน`);
-    } else setTimeout(() => A.run(), 120);
+    A.start.boot({ fresh: !reopen });
     if (window.claude && typeof window.claude.use === 'function') {
       window.claude.use('downloads').then((d) => { A.caps.downloads = d; U.$$('[data-needs="downloads"]').forEach((e) => { e.hidden = !d; }); }).catch(() => {});
       window.claude.use('sample').then((s) => { A.caps.sample = s; if (A.panel === 'translate') A.refreshTranslate(true); }).catch(() => {});

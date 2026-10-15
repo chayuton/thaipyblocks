@@ -492,12 +492,16 @@
     renderBar();
     const prev = S.prev; S.prev = null;
     if (restore) {
+      /* back to the work that was open before the exercise; nothing there (it was opened from the start screen) → the start screen */
       const st = prev || (U.store.get('pyblocks.draft.v2') || {}).state;
-      A.loadProgram(st && st.blocks ? st : PB.SAMPLES[0].build());
+      const back = !!(st && st.blocks && st.blocks.blocks && st.blocks.blocks.length);
+      A.loadProgram(back ? st : {});
       A.out.clear(); A.vars = null; A.lastError = null; A.setErrorBadge(false); A.setStatus('', TR('พร้อมรัน'));
-      A.out.note(TR('ออกจากโหมดแบบฝึกหัดแล้ว กลับมาที่งานเดิมของคุณ (งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง)'));
+      A.out.note(back ? TR('ออกจากโหมดแบบฝึกหัดแล้ว กลับมาที่งานเดิมของคุณ (งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง)') : TR('ออกจากโหมดแบบฝึกหัดแล้ว งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง'));
       if (A.refreshVars) A.refreshVars();
+      if (!back && A.start) A.start.reset();
     }
+    if (A.start) A.start.update();
     if (A.isPhone()) A.setView('blocks'); else if (A.panel === 'task') A.setPanel('out');
   };
   /* resume after a reload */

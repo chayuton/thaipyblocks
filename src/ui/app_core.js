@@ -36,11 +36,14 @@
     ws.addChangeListener(onWsChange);
     new ResizeObserver(() => Blockly.svgResize(ws)).observe($('#blockly'));
   };
-  /* the workspace autosaves to the main draft, or to the open exercise's own slot in exercise mode */
+  /* the workspace autosaves to the main draft, or to the open exercise's own slot in exercise mode. The app opens
+     on a blank workspace (the start screen): the draft of an earlier visit stays until this visit has a program of
+     its own (A.blankStart is cleared by PB.ui.start when the workspace first holds blocks) */
   const saveDraftNow = () => {
     try {
       const state = Blockly.serialization.workspaces.save(A.ws);
-      if (A.ex && A.ex.active) A.ex.saveWork(state); else U.store.set('pyblocks.draft.v2', { ts: Date.now(), state });
+      if (A.ex && A.ex.active) A.ex.saveWork(state);
+      else if (!(A.blankStart && !A.ws.getTopBlocks(false).length)) U.store.set('pyblocks.draft.v2', { ts: Date.now(), state });
     } catch (e) { /* ignore */ }
   };
   const saveDraft = U.debounce(saveDraftNow, 700);
@@ -77,6 +80,7 @@
   }
   A._fresh = fresh;
   function onWsChange(e) {
+    if (A.start) A.start.onEvent(e);
     if (e.type === Blockly.Events.SELECTED) { A.onSelect(e.newElementId); return; }
     trackFresh(e);
     if (e.isUiEvent || e.type === Blockly.Events.VIEWPORT_CHANGE || e.type === Blockly.Events.TOOLBOX_ITEM_SELECT) return;
@@ -95,6 +99,7 @@
     try { Blockly.serialization.workspaces.load(state, ws); ws.clearUndo(); } finally { A.loading = false; }
     A.scrollToStart();
     A.knownCols.clear(); A.selectedId = null; A.onSelect(null);
+    if (A.start) A.start.update();
     saveDraft(); refreshDerived();
     if (run) setTimeout(() => A.run(), 60);
   };
@@ -115,6 +120,7 @@
     blocks.forEach((b, i) => { b.x = 24; b.y = bottom + 60 + i * 400; });
     A.appending = true;
     try { for (const b of blocks) Blockly.serialization.blocks.append(b, ws); } finally { A.appending = false; }
+    if (A.start) A.start.update();
     saveDraft(); refreshDerived();
   };
 

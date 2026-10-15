@@ -1,5 +1,6 @@
 """Screenshots of key views for a visual review.
-The README picture: python3 test/shots.py docs readme  ->  docs/screenshot.png"""
+The README picture: python3 test/shots.py docs readme  ->  docs/screenshot.png
+The start screen (light / dark / phone / English): python3 test/shots.py <folder> start"""
 import base64, os, sys, json
 sys.path.insert(0, os.path.dirname(__file__))
 from ui_smoke import route, PAGE, ROOT
@@ -9,12 +10,13 @@ WHICH = set(sys.argv[2].split(',')) if len(sys.argv) > 2 else None
 os.makedirs(OUT, exist_ok=True)
 FILES = os.path.join(ROOT, 'test', 'files')
 
-def boot(p, w, h, dark=False):
+def boot(p, w, h, dark=False, hash=''):
+    """the app as it opens: the start screen on a blank workspace"""
     b = p.chromium.launch()
     ctx = b.new_context(viewport={'width': w, 'height': h}, color_scheme='dark' if dark else 'light', device_scale_factor=1 if w > 600 else 2)
     page = ctx.new_page(); route(page)
     page.on('pageerror', lambda e: print('PAGEERROR', e))
-    page.goto(PAGE); page.wait_for_function('document.body.classList.contains("ready")', timeout=20000); page.wait_for_function('!PB.ui.running', timeout=60000)
+    page.goto(PAGE + hash); page.wait_for_function('document.body.classList.contains("ready")', timeout=20000); page.wait_for_function('!PB.ui.running', timeout=60000)
     page.wait_for_timeout(400)
     return b, page
 
@@ -29,8 +31,15 @@ def upload(page, fname):
 def want(k): return WHICH is None or k in WHICH
 
 with sync_playwright() as p:
+    if want('start'):
+        for name, w, h, dark, hash in [('s1_start', 1360, 860, False, ''), ('s2_start_dark', 1360, 860, True, ''), ('s3_start_laptop', 1024, 700, False, ''),
+                                       ('s4_start_en', 1360, 860, False, '#lang=en'), ('s5_start_phone', 390, 844, False, '')]:
+            b, page = boot(p, w, h, dark, hash)
+            page.screenshot(path=f'{OUT}/{name}.png')
+            b.close()
     if want('desk'):
         b, page = boot(p, 1360, 860)
+        load(page, 'iris')
         page.screenshot(path=f'{OUT}/d1_iris_out.png')
         page.evaluate('PB.ui.setPanel("code")'); page.wait_for_timeout(300)
         page.screenshot(path=f'{OUT}/d2_code.png')
@@ -61,6 +70,7 @@ with sync_playwright() as p:
         b.close()
     if want('phone'):
         b, page = boot(p, 390, 844)
+        load(page, 'iris')
         page.evaluate('PB.ui.setView("blocks")'); page.wait_for_timeout(300)
         page.screenshot(path=f'{OUT}/m1_blocks.png')
         page.evaluate('PB.ui.setView("out")'); page.wait_for_timeout(300)

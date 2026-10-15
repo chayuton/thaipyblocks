@@ -46,6 +46,9 @@ def boot(p, mock=True, ctx=None, w=1360, hgt=860):
     page.on('pageerror', lambda e: errs.append(str(e)))
     page.goto(PAGE); page.wait_for_function('document.body.classList.contains("ready")', timeout=20000)
     page.wait_for_timeout(300); page.wait_for_function('!PB.ui.running', timeout=60000)
+    # the app opens on the start screen (test/start_test.py); these checks start from the first sample project
+    page.evaluate('PB.ui.loadProgram(PB.SAMPLES[0].build(), { run: true })')
+    page.wait_for_timeout(300); page.wait_for_function('!PB.ui.running', timeout=60000)
     return ctx, page, errs
 
 def upload(page, fname):

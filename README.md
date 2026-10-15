@@ -1,6 +1,6 @@
 # ThaiPyBlocks
 
-**รุ่นเผยแพร่ 1 · v1.0.0** (แอปเวอร์ชัน 3.8) · ภาษาไทย / English
+**รุ่นเผยแพร่ 1.1 · v1.1.0** (แอปเวอร์ชัน 3.9) · ภาษาไทย / English
 
 ![ThaiPyBlocks: ต่อบล็อกทางซ้าย ผลลัพธ์แบบ Jupyter ทางขวา](docs/screenshot.png)
 
@@ -10,15 +10,18 @@
 
 *ThaiPyBlocks is a block-based Python (pandas / scikit-learn) learning studio in Thai and English. Every block is real Python,
 programs run in the browser with no install and no server, and the app exports .py / .ipynb / HTML / PDF.
+It opens on a blank start screen: a new program, your own data, a sample project or an exercise, or carry on with the work saved in the browser.
 The whole app is one static page, ready for GitHub Pages. This repository also holds the test suites and two classroom worksheets.*
 
-**เปิดใช้งาน:** <https://chayuton.github.io/thaipyblocks/> · **ดาวน์โหลด:** [Releases → v1.0.0](https://github.com/chayuton/thaipyblocks/releases/tag/v1.0.0)
+**เปิดใช้งาน:** <https://chayuton.github.io/thaipyblocks/> · **ดาวน์โหลด:** [Releases → v1.1.0](https://github.com/chayuton/thaipyblocks/releases/tag/v1.1.0)
 · **ใบงาน:** [K-Means](https://chayuton.github.io/thaipyblocks/worksheets/worksheet1_kmeans.pdf) · [Neural Network](https://chayuton.github.io/thaipyblocks/worksheets/worksheet2_neural_network.pdf)
 
 ---
 
 ## ใช้ทำอะไรได้บ้าง
 
+- **หน้าเริ่มต้น** เปิดแอปแล้วพบพื้นที่ทำงานว่าง พร้อมทางเริ่ม 4 ทาง: **เริ่มงานใหม่** (ต่อบล็อกเองตั้งแต่ต้น) · **ข้อมูล** (อัปโหลดไฟล์ของคุณหรือเลือกชุดข้อมูลตัวอย่าง) ·
+  **โครงงานตัวอย่าง** · **แบบฝึกหัด** · งานที่บันทึกไว้ในเบราว์เซอร์กด **ทำต่อจากครั้งก่อน** ได้ ส่วนการรีโหลดหน้าหรือสลับภาษาจะกลับมาที่งานที่เปิดอยู่
 - **ตัวช่วยเลือกโมเดล** เลือกทีละขั้น: ชนิดข้อมูล (ตาราง · ข้อความ · อนุกรมเวลา · รูปภาพ) → งาน 13 แบบ → ข้อมูล → ทำความสะอาดและปรับสเกล → วิธีวัดผล
   (แบ่งฝึก/ทดสอบ · cross-validation · GridSearchCV) → โมเดล 24 ตัวของ scikit-learn แล้วกด "สร้างบล็อกและรัน"
 - **ตัวช่วยทำความสะอาดข้อมูล** สแกนข้อมูลแล้วเสนอวิธีแก้ทีละเรื่อง: ข้อความที่หมายถึงค่าว่าง ช่องว่างเกิน ตัวพิมพ์ไม่ตรงกัน ชื่อที่สะกดคล้ายกัน
@@ -64,7 +67,7 @@ The whole app is one static page, ready for GitHub Pages. This repository also h
 
 ### แบบที่ 2: repo ใหม่จากไฟล์ zip (อัปโหลดผ่านหน้าเว็บ)
 
-1. ดาวน์โหลด `thaipyblocks-v1.0.0.zip` จาก [Releases](https://github.com/chayuton/thaipyblocks/releases/tag/v1.0.0) แล้วแตกไฟล์ จะได้โฟลเดอร์ `thaipyblocks`
+1. ดาวน์โหลด `thaipyblocks-v1.1.0.zip` จาก [Releases](https://github.com/chayuton/thaipyblocks/releases/tag/v1.1.0) แล้วแตกไฟล์ จะได้โฟลเดอร์ `thaipyblocks`
 2. ที่ github.com กด **New** (หรือ **+ → New repository**) ตั้งชื่อ เช่น `thaipyblocks` เลือก **Public** แล้วกด **Create repository**
 3. หน้าเว็บของ GitHub อัปโหลดได้ครั้งละไม่เกิน 100 ไฟล์ ชุดนี้มีประมาณ 105 ไฟล์ จึงอัปโหลด 2 รอบ
    (ลิงก์ **uploading an existing file** หรือ **Add file → Upload files**) ใช้ Chrome, Edge หรือ Firefox
@@ -147,7 +150,7 @@ sh test/run_all.sh
 
 | ชุดทดสอบ (`test/`) | ตรวจอะไร | ผลก่อนเผยแพร่ |
 | --- | --- | --- |
-| `i18n_tool.py check` | ข้อความไทยทุกข้อความบนหน้าจอผ่าน `TR()` และมีคำแปลภาษาอังกฤษ | 1,667 ข้อความ · ขาด 0 |
+| `i18n_tool.py check` | ข้อความไทยทุกข้อความบนหน้าจอผ่าน `TR()` และมีคำแปลภาษาอังกฤษ | 1,684 ข้อความ · ขาด 0 |
 | `ui_smoke.py` | โครงงานตัวอย่างทุกโครงงานรันในเบราว์เซอร์ | 11/11 |
 | `py_check.py` | โค้ด Python ที่แอปสร้างจากโครงงานตัวอย่างรันใน CPython ได้ค่าตัววัดเท่ากับในแอป | 11/11 |
 | `upload_test.py` | อ่านไฟล์ใน `test/files` (CSV, ตัวคั่น `;`, TIS-620, Excel, ข้อความ, อนุกรมเวลา, ภาพ) แล้วรันโปรแกรมจากไฟล์ เทียบกับ Python | 21/21 |
@@ -157,13 +160,14 @@ sh test/run_all.sh
 | `report_test.py` | รายงาน HTML และชุดโค้ด .zip ของโครงงานตัวอย่าง | ผ่าน |
 | `pdf_test.py` | ส่งออก PDF: หน้า A4 ถูกต้อง ค้นหาข้อความไทยได้ ธีมมืด จอมือถือ เบราว์เซอร์รุ่นเก่า | 43/43 |
 | `ux_test.py` | ใช้งานจริง: ดาวน์โหลด แก้บล็อก undo ลากบล็อก รันทีละขั้น ตัวช่วยผ่านการคลิก ข้อผิดพลาดภาษาไทย | 52/52 |
+| `start_test.py` | หน้าเริ่มต้น: ทุกทางเริ่มผ่านการคลิกจริง · ทำต่อจากครั้งก่อน · รีโหลด/สลับภาษากลับมาที่งานเดิม แท็บใหม่เริ่มที่หน้าว่าง · การเปิดแอปไม่เขียนทับงานที่บันทึกไว้ · มือถือ · ภาษาอังกฤษ · ความคมชัดของสีทั้งธีมสว่างและมืด | 35/35 |
 | `columns_test.py` | รู้คอลัมน์ของทุกตารางก่อนรัน และตัวเลือกตาราง/คอลัมน์ในบล็อก | 85/85 |
 | `lang_test.py` | หน้าจอภาษาอังกฤษไม่มีภาษาไทยหลงเหลือ (ยกเว้นข้อมูล) และสลับภาษาได้ | 40/40 |
 | `v38_test.py` | ความสามารถของเวอร์ชัน 3.8: SelectKBest ชื่อสะกดคล้ายกัน วันที่หลายรูปแบบ ตัวตัดคำไทย ตัวเลือกค่า | 21/21 |
 | `thai_check.py` | ตัดคำไทย 5 แบบ เทียบกับ PyThaiNLP 5.3.8 | 3,232 ข้อความ × 5 แบบ · ต่าง 0 |
 | `engine_cases.js` + `sk_ref.py` | โมเดลและตัววัดผลเทียบกับ scikit-learn ทีละค่า | 21 ชุด · ต่าง 2 ค่าที่ทราบอยู่แล้ว ¹ |
 | `search_cases.js` + `search_ref.py` | GridSearchCV และ cross-validation เทียบกับ scikit-learn | 11 ชุด · ต่าง 0 |
-| `pages_test.py` | เปิดแอปแบบเดียวกับ GitHub Pages (โฟลเดอร์ `/thaipyblocks/` และรากของเว็บ) แล้วใช้ทุกฟังก์ชัน: โครงงานตัวอย่าง · โปรแกรมจากตัวช่วยเลือกโมเดล 141 แบบ · ตัวช่วยทำความสะอาด · แบบฝึกหัด · อัปโหลดไฟล์ผ่านหน้าต่างเลือกไฟล์ · ดาวน์โหลด PDF / HTML / .zip / โครงงาน · แท็บแปลคำสั่งและตัวแปร · สลับภาษา · จอมือถือ · เปิดจากไฟล์ในเครื่อง | 38/38 |
+| `pages_test.py` | เปิดแอปแบบเดียวกับ GitHub Pages (โฟลเดอร์ `/thaipyblocks/` และรากของเว็บ) แล้วใช้ทุกฟังก์ชัน: หน้าเริ่มต้น · โครงงานตัวอย่าง · โปรแกรมจากตัวช่วยเลือกโมเดล 141 แบบ · ตัวช่วยทำความสะอาด · แบบฝึกหัด · อัปโหลดไฟล์ผ่านหน้าต่างเลือกไฟล์ · ดาวน์โหลด PDF / HTML / .zip / โครงงาน · แท็บแปลคำสั่งและตัวแปร · สลับภาษา · จอมือถือ · เปิดจากไฟล์ในเครื่อง | 39/39 |
 
 ¹ `coef_` ของ LogisticRegression ต่างที่ทศนิยมตำแหน่งที่ 3 และ `feature_importances_` ของ GradientBoostingClassifier ต่างที่ทศนิยมตำแหน่งที่ 3
 บนเครื่องที่มีชุดคำสั่ง AVX-512 · `run_all.sh` ยอมรับ 2 ค่านี้และแสดงไว้ทุกครั้ง
@@ -188,7 +192,7 @@ python3 build.py      # เขียน index.html ใหม่ (และ dist/
 | `src/index.html`, `src/ui/styles.css` | โครงหน้า ธีมสว่าง/มืด และ layout คอมพิวเตอร์/มือถือ |
 | `src/engine/` | เครื่องคำนวณ JavaScript ที่ให้ผลเหมือน pandas / scikit-learn / NumPy และตัดคำไทยแบบ PyThaiNLP |
 | `src/blocks/` | บล็อกทั้งหมด ตัวรันบล็อก ตัวสร้างโค้ด Python และคำอธิบายทีละขั้น |
-| `src/ui/` | หน้าจอ: ตัวช่วยเลือกโมเดลและทำความสะอาดข้อมูล แบบฝึกหัด รายงาน PDF การเลือกคอลัมน์ ภาษา |
+| `src/ui/` | หน้าจอ: หน้าเริ่มต้น ตัวช่วยเลือกโมเดลและทำความสะอาดข้อมูล แบบฝึกหัด รายงาน PDF การเลือกคอลัมน์ ภาษา |
 | `src/data.js`, `src/thai_dict.js` | ชุดข้อมูลตัวอย่าง และพจนานุกรม/คำหยุด/พยางค์ภาษาไทย (ไฟล์ที่สร้างอัตโนมัติ) |
 | `src/i18n_en.js` | คำแปลภาษาอังกฤษของทุกข้อความบนหน้าจอ |
 | `data/` | ชุดข้อมูลตัวอย่างเป็น CSV และสคริปต์ที่สร้าง `src/data.js` (`prep.py`) และ `src/thai_dict.js` (`thai_dict.py` ต้องมี pythainlp) |
@@ -205,6 +209,7 @@ python3 build.py      # เขียน index.html ใหม่ (และ dist/
   บนหน้าเว็บนี้แอปจะแจ้งไว้ ส่วนมุมมอง "ทีละขั้น" และ "ผังงาน" ใช้ได้ตามปกติ
 - คำนวณในเบราว์เซอร์ จึงเหมาะกับข้อมูลหลักพันถึงหลักหมื่นแถว (GridSearchCV กับข้อมูลภาพใช้เวลาหลายวินาที) · ไม่มี deep learning (ใช้ MLPClassifier / MLPRegressor แทน)
 - ไฟล์ที่อัปโหลดอยู่ในเบราว์เซอร์ของผู้ใช้เท่านั้น ต้องอัปโหลดใหม่เมื่อเปิดหน้าใหม่ · บล็อก ชื่อคอลัมน์ และความคืบหน้าแบบฝึกหัดถูกจำไว้ในเบราว์เซอร์ของเครื่องนั้น
+  (เปิดแอปครั้งใหม่จะเริ่มที่หน้าเริ่มต้น กด "ทำต่อจากครั้งก่อน" เพื่อเปิดงานล่าสุด)
 - ถ้านำหน้าเว็บไปฝังใน iframe ของเว็บอื่น ปุ่มดาวน์โหลดจะถูกซ่อน
 - ตัวเลขที่ได้ตรงกับ pandas 3.0, scikit-learn 1.8 และ PyThaiNLP 5.3.8 · Python บนเครื่องอื่นอาจต่างเล็กน้อยที่ทศนิยมหลักท้าย ๆ
 

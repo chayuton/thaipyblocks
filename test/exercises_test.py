@@ -30,6 +30,8 @@ def main(only=None):
         page.on('pageerror', lambda e: errs.append(str(e)))
         page.goto(PAGE); page.wait_for_function('document.body.classList.contains("ready")', timeout=20000); page.wait_for_timeout(400); page.wait_for_function('!PB.ui.running', timeout=60000)
         page.evaluate("() => { localStorage.removeItem('pyblocks.ex.done.v1'); localStorage.removeItem('pyblocks.ex.work.v1'); }")
+        # the app opens on a blank start screen: start from a sample project, which must come back after the exercises
+        page.evaluate('PB.ui.loadProgram(PB.SAMPLES[0].build())'); page.wait_for_timeout(300)
         before = page.evaluate('JSON.stringify(Blockly.serialization.workspaces.save(PB.ui.ws))')
         ids = page.evaluate('PB.EXERCISES.map((e) => e.id)')
         for i, ex in enumerate(ids):

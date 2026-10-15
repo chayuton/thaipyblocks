@@ -123,7 +123,8 @@ button { cursor: pointer; }
 
 .studio { display: grid; grid-template-columns: minmax(0, 1fr) 6px minmax(340px, var(--side-w, 44%)); min-height: 0; }
 .pane { min-width: 0; min-height: 0; position: relative; }
-.pane-blocks { display: grid; grid-template-rows: 1fr auto; background: var(--canvas); }
+/* isolate: the palette, its flyout and the start screen stack inside this pane, under menus and dialogs */
+.pane-blocks { display: grid; grid-template-rows: 1fr auto; background: var(--canvas); isolation: isolate; }
 #blockly { position: relative; min-height: 0; }
 .splitter { background: var(--line-soft); cursor: col-resize; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 .splitter:hover, .splitter.dragging { background: var(--accent-soft); }
@@ -490,6 +491,61 @@ label.cl-title { cursor: pointer; }
 .ex-item-text b { font-weight: 600; }
 .ex-item-text small { color: var(--ink-3); font-size: 12px; }
 
+/* ---------- start screen (src/ui/start.js) ----------
+   An empty workspace with the ways to begin, drawn as blocks lying on the canvas: each choice has a block's
+   notch and tab and the colour of the blocks it leads to (data = teal, models = purple …). On a computer it sits
+   right of the palette and steps aside while a palette category is open; on a phone it covers the whole pane. */
+.start { position: relative; grid-row: 1; grid-column: 1; z-index: 4; display: flex; min-width: 0; min-height: 0; overflow: auto; margin-left: var(--tbx, 0px); pointer-events: none; transition: opacity .14s ease; container: start / inline-size; }
+.start.is-away { opacity: 0; visibility: hidden; transition: opacity .14s ease, visibility 0s linear .14s; }
+.start-in { margin: auto; width: 100%; max-width: 580px; padding: 28px 28px 32px; pointer-events: auto; }
+.start-head { margin-bottom: 24px; }
+.start-head h2 { margin: 0 0 6px; font: 700 26px/1.25 var(--font-display); color: var(--ink); text-wrap: balance; }
+.start-head p { margin: 0; max-width: 46ch; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
+.sb-resume-list { display: grid; gap: 18px; margin-bottom: 26px; }
+.sb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--sb-min, 200px), 1fr)); gap: 20px 14px; }
+.sb { --c: #2c69b0; --c-ink: #ffffff; --fill: var(--c); position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); align-content: start; gap: 2px 10px; min-height: 88px; padding: 14px 16px 15px; border: 0; border-radius: 8px; background: var(--fill); color: var(--c-ink); text-align: left; transition: transform .12s ease; }
+/* the notch a block above would plug into, and the tab that reaches the block below */
+.sb::before, .sb::after { content: ""; position: absolute; left: 18px; width: 30px; height: 7px; border-radius: 0 0 7px 7px; }
+.sb::before { top: 0; background: var(--canvas); }
+.sb::after { bottom: -7px; background: var(--fill); }
+.sb:hover { --fill: color-mix(in srgb, var(--c) 87%, #ffffff); transform: translateY(-2px); }
+.sb:active { --fill: color-mix(in srgb, var(--c) 90%, #000000); transform: none; }
+.sb:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sb-icon { grid-row: 1 / span 2; display: flex; padding-top: 2px; }
+.sb-icon svg { width: 20px; height: 20px; }
+.sb-title { font-size: 16px; font-weight: 600; line-height: 1.35; }
+.sb-desc { grid-column: 2; font-size: 13px; line-height: 1.5; }
+.sb-resume { --c: var(--signal); --c-ink: var(--signal-ink); min-height: 0; }
+.sb-new { --c: #2c69b0; }
+.sb-data { --c: #0e7c86; }
+.sb-samples { --c: #6d4bc3; }
+.sb-exercises { --c: #a23b72; }
+.start-tools { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); }
+.start-tools .btn { color: var(--ink-2); padding: 0 8px; }
+.start-tools .btn:hover { color: var(--ink); }
+body.on-start .canvas-tools { display: none; }
+/* a narrow canvas (phone, small laptop): two columns of smaller blocks, the icon above the title */
+@container start (max-width: 519px) {
+  .start-in { padding: 22px 16px 28px; }
+  .start-head { margin-bottom: 20px; }
+  .start-head h2 { font-size: 22px; }
+  .start-head p { font-size: 13.5px; }
+  .sb-grid { --sb-min: 136px; gap: 18px 10px; }
+  .sb { grid-template-columns: minmax(0, 1fr); gap: 2px; min-height: 0; padding: 13px 13px 14px; }
+  .sb::before, .sb::after { left: 14px; width: 26px; }
+  .sb-icon { grid-row: auto; padding: 0 0 4px; }
+  .sb-desc { grid-column: 1; font-size: 12.5px; }
+  .sb-resume { grid-template-columns: 22px minmax(0, 1fr); gap: 2px 10px; }
+  .sb-resume .sb-icon { grid-row: 1 / span 2; padding: 2px 0 0; }
+  .sb-resume .sb-desc { grid-column: 2; }
+  .start-tools { margin-top: 24px; }
+}
+/* "ข้อมูลของฉัน": the datasets built into the app · the sample-project gallery */
+.data-samples { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.data-samples h3 { margin: 0 0 2px; font: 600 15px var(--font-display); }
+.data-samples > .muted { margin: 0 0 10px; }
+.dlg-lead { margin: 0 0 12px; color: var(--ink-2); }
+
 /* ---------- mobile ---------- */
 .mnav { display: none; }
 @media (max-width: 899px) {
@@ -526,8 +582,11 @@ label.cl-title { cursor: pointer; }
   .scrim { padding: 8px; align-items: end; }
   .opt-grid { grid-template-columns: 1fr 1fr; }
   .canvas-tools { margin: 0 10px 12px 0; }
+  /* the start screen covers the palette too (it comes back with "เริ่มงานใหม่"), on the canvas's dotted grid */
+  .start { margin-left: 0; z-index: 75; pointer-events: auto; background-color: var(--canvas); background-image: radial-gradient(circle at 1px 1px, rgba(120, 135, 155, .32) 1px, transparent 1.4px); background-size: 24px 24px; }
 }
 @media (max-width: 420px) { .opt-grid, .opt-grid.two { grid-template-columns: 1fr; } .tb-hide-xs { display: none !important; } }
+@media (max-width: 420px) and (min-width: 340px) { .data-samples .opt-grid { grid-template-columns: 1fr 1fr; } }
 /* narrow phones: the results bar keeps one row (PDF, the report as an icon, "ล้าง") */
 @media (max-width: 480px) { .oh-full { display: none; } .lang-btn { display: none; } }   /* phones: the language switch is the first item of the ⋯ menu */
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -1183,8 +1242,10 @@ PB.I18N_EN = {
 "{0} {1} คอลัมน์": "{0} on {1} columns",
 "{0} {1} ค่า": "{0}: {1} values",
 "{0} {1} ค่า เช่น {2}": "{0}: {1} values, e.g. {2}",
+"{0} · {1} แถว · {2}": "{0} · {1} rows · {2}",
 "{0} · ถ้าจะนำไปสร้างโมเดล ควรเรียนสเกลจากชุดฝึกเท่านั้น (ตัวช่วยเลือกโมเดลใส่ตัวปรับสเกลไว้ในไปป์ไลน์ให้)": "{0} · if a model comes next, learn the scale from the training set only (the model wizard puts the scaler in a pipeline for you)",
 "{0} ของแต่ละรอบใน cross-validation": "{0} of each cross-validation fold",
+"{0} ข้อ {1} ระดับ ต่อบล็อกตามโจทย์ ตรวจคำตอบอัตโนมัติ": "{0} exercises in {1} levels, each checked automatically",
 "{0} ข้อ ตรวจคำตอบอัตโนมัติ": "{0} exercises, checked automatically",
 "{0} ค่า": "{0} values",
 "{0} ค่า · dtype {1}{2}": "{0} values · dtype {1}{2}",
@@ -1203,6 +1264,7 @@ PB.I18N_EN = {
 "{0} ต้องเป็นตารางข้อมูล (DataFrame) แต่ได้ {1}": "{0} must be a table (DataFrame), but it is {1}",
 "{0} ต้องเป็นลิสต์ แต่ได้ {1}": "{0} must be a list, but got {1}",
 "{0} บรรทัด": "{0} lines",
+"{0} บล็อก": "{0} blocks",
 "{0} มีค่าว่าง (NaN)": "{0} has missing values (NaN)",
 "{0} ยังไม่ลู่เข้า ลองเพิ่ม max_iter หรือปรับสเกลข้อมูล": "{0} did not converge; try a larger max_iter or scale the data",
 "{0} ว่าง {1}%": "{0} {1}% empty",
@@ -1212,6 +1274,7 @@ PB.I18N_EN = {
 "{0} แถว × {1} คอลัมน์ · {2}{3}": "{0} rows × {1} columns · {2}{3}",
 "{0} แถว × {1} คอลัมน์{2}": "{0} rows × {1} columns{2}",
 "{0} แยกตาม {1}": "{0} by {1}",
+"{0} โครงงานพร้อมรัน ทั้งตาราง ข้อความ อนุกรมเวลา และรูปภาพ": "{0} ready-to-run projects with tables, text, time series and images",
 "{0} ไม่มี {1}": "{0} has no {1}",
 "{0} ไม่มีค่า {1}": "{0} has no attribute {1}",
 "{0} ไม่มีเมธอด .{1}()": "{0} has no method .{1}()",
@@ -1317,6 +1380,7 @@ PB.I18N_EN = {
 "ข้อถัดไป: {0} →": "Next: {0} →",
 "ข้อมูล": "Data",
 "ข้อมูล (pandas)": "Data (pandas)",
+"ข้อมูล {0}": "data: {0}",
 "ข้อมูลกราฟ": "The chart data",
 "ข้อมูลของคุณเป็นแบบไหน": "What kind of data do you have?",
 "ข้อมูลของฉัน": "My data",
@@ -1489,6 +1553,7 @@ PB.I18N_EN = {
 "งานนี้ต้องใช้คอลัมน์ตัวเลขอย่างน้อย 2 คอลัมน์": "This task needs at least 2 numeric columns",
 "งานพยากรณ์ค่าให้ใช้ r2_score, mean_absolute_error หรือ mean_squared_error": "For regression use r2_score, mean_absolute_error or mean_squared_error",
 "จบ": "End",
+"จะเริ่มจากตรงไหนดี?": "Where would you like to start?",
 "จัดกลุ่ม & ลดมิติ": "Clustering & dimensionality reduction",
 "จัดกลุ่ม / ลดมิติ": "Clustering / dimensionality reduction",
 "จัดกลุ่มข้อความ": "Text clustering",
@@ -1550,6 +1615,7 @@ PB.I18N_EN = {
 "ชื่อเดียวกันที่สะกดต่างกัน (fuzzy matching): ดูคู่ที่สะกดคล้ายกัน แล้วรวมเป็นชื่อที่พบบ่อยกว่า": "The same name spelled differently (fuzzy matching): look at the pairs spelled alike, then merge into the more common name",
 "ชุดข้อมูล": "Dataset",
 "ชุดข้อมูล ": "dataset ",
+"ชุดข้อมูลตัวอย่างในแอป": "Sample datasets in the app",
 "ชุดทดสอบเล็กกว่าจำนวนคลาส เพิ่ม test_size": "The test set is smaller than the number of classes; increase test_size",
 "ชุดฝึกจะว่างเปล่า ลดค่า test_size ลง": "The training set would be empty; lower test_size",
 "ชุดฝึกเล็กกว่าจำนวนคลาส": "The training set is smaller than the number of classes",
@@ -1692,6 +1758,7 @@ PB.I18N_EN = {
 "ต่อบล็อกตามโจทย์ กด \"ตรวจคำตอบ\" แล้วแอปจะรันโปรแกรมและตรวจให้ทันที": "Build the blocks for the task and press \"Check\"; the app runs and checks the program right away",
 "ต่อบล็อกทั้งหมดไว้ใต้ `cups = 38` ให้เป็นสายเดียวกัน": "Attach all the blocks under `cups = 38` as one chain",
 "ต่อบล็อกเป็นโปรแกรม Python วิเคราะห์ข้อมูลและสร้างโมเดล Machine Learning พร้อมแปลคำสั่งเป็นภาษาไทย": "Snap blocks together into Python programs that analyze data and build machine-learning models, with every step explained",
+"ต่อบล็อกเองตั้งแต่ต้น ลากบล็อกจากแถบซ้ายมาวางบนพื้นที่ทำงาน": "Build it yourself: drag blocks in from the left",
 "ต่ำสุด*": "min*",
 "ต้นไม้ {0}/{1}": "Tree {0}/{1}",
 "ต้นไม้ตัดสินใจ": "decision tree",
@@ -1738,6 +1805,7 @@ PB.I18N_EN = {
 "ทำซ้ำบล็อก": "Duplicate",
 "ทำตัวพิมพ์ใหญ่-เล็กให้ตรงกัน": "Make capitalization consistent",
 "ทำต่อ: ข้อ {0}": "Continue: exercise {0}",
+"ทำต่อจากครั้งก่อน": "Continue where you left off",
 "ทำนาย": "predict",
 "ทำนายข้อความใหม่": "predict a new text",
 "ทำนายข้อมูลใหม่": "predict a new row",
@@ -1746,6 +1814,7 @@ PB.I18N_EN = {
 "ทำเป็นค่าว่าง = เหมาะกับค่าที่พิมพ์ผิด (เช่น อายุ 250) แล้วเติมค่าใหม่ · ตัดขอบ = เก็บแถวไว้แต่ลดความสุดโต่ง · ลบแถว = ตัดทั้งแถวออก": "make missing = for typos (e.g. age 250), then fill a new value · clip = keep the row but tone down the extreme · drop rows = remove the whole row",
 "ทำเป็นค่าว่างแล้วเติม": "Make missing, then fill",
 "ทำเป็นตาราง": "make a table",
+"ทำแบบฝึกหัดต่อ: ข้อ {0}": "Continue exercise {0}",
 "ทำให้สัมประสิทธิ์ของฟีเจอร์ที่ไม่สำคัญเป็นศูนย์ ช่วยคัดเลือกฟีเจอร์": "Sets the coefficients of unimportant features to zero, which helps select features",
 "ทิปร้านอาหาร": "Restaurant tips",
 "ทิปเฉลี่ยของแต่ละวัน": "Mean tip per day",
@@ -1928,7 +1997,7 @@ PB.I18N_EN = {
 "ยังไม่มีผลลัพธ์ให้ทำ PDF เพิ่มบล็อก print หรือกราฟแล้วกด ▶ รัน": "There are no results for a PDF yet; add a print or chart block and press ▶ Run",
 "ยังไม่มีผลลัพธ์ให้ทำรายงาน เพิ่มบล็อก print หรือกราฟแล้วกด ▶ รัน": "There are no results for a report yet; add a print or chart block and press ▶ Run",
 "ยังไม่มีโค้ดให้แปล": "There is no code to translate yet",
-"ยังไม่มีไฟล์ของคุณ ลองใช้ข้อมูลตัวอย่างในตัวช่วยเลือกโมเดลก่อนก็ได้": "No files of yours yet; you can try the sample data in the model wizard first",
+"ยังไม่มีไฟล์ของคุณ อัปโหลดไฟล์ด้านบน หรือเลือกชุดข้อมูลตัวอย่างด้านล่าง": "No files of yours yet. Upload one above, or pick a sample dataset below",
 "ยังไม่มีไฟล์ที่อัปโหลด": "No files uploaded yet",
 "ยังไม่รู้จักคอลัมน์ — กดรันก่อน": "No columns known yet — run the program first",
 "ยังไม่ได้ fit ตัวค้นหา จึงยังไม่มีผล": "The search has not been fitted, so there are no results yet",
@@ -1999,8 +2068,8 @@ PB.I18N_EN = {
 "ลบตัวแปร \"%2\" ที่ใช้อยู่ %1 จุดหรือไม่?": "Delete %1 uses of the \"%2\" variable?",
 "ลบทั้งหมด": "Delete all",
 "ลบบล็อก": "Delete block",
-"ลบบล็อกทั้งหมด": "Delete all blocks",
 "ลบบล็อกทั้งหมด %1 บล็อกหรือไม่?": "Delete all %1 blocks?",
+"ลบบล็อกทั้งหมด แล้วกลับไปหน้าเริ่มต้น": "Delete all blocks and go back to the start screen",
 "ลบบล็อกทั้งหมดในพื้นที่ทำงาน?": "Delete every block in the workspace?",
 "ลบสมาชิกได้เฉพาะลิสต์": "Items can be removed from lists only",
 "ลบเฉพาะแถวที่คอลัมน์ที่เลือกเป็นค่าว่าง": "Drop only the rows where the chosen columns are missing",
@@ -2023,6 +2092,7 @@ PB.I18N_EN = {
 "ลองเลือกเมธอดอื่น": "Try another method",
 "ลองโมเดล KNN ด้วย n_neighbors = 1, 3, 5, …, 15 (ลูป `for` เพิ่มทีละ 2) เก็บคะแนนชุดทดสอบของแต่ละค่าไว้ในลิสต์ `scores` แล้ววาดกราฟของ `scores`": "Try KNN with n_neighbors = 1, 3, 5, …, 15 (a `for` loop stepping by 2), keep the test score of each in the list `scores`, then plot `scores`",
 "ลากบล็อก `cups` ไปใส่ช่องว่างหลังเครื่องหมาย × ในบล็อก `total = …`": "Drag the `cups` block into the empty slot after × in the `total = …` block",
+"ลากบล็อกจากแถบซ้ายมาวางบนพื้นที่ทำงาน เริ่มจากบล็อกโหลดข้อมูล แล้วต่อบล็อกถัดไปไว้ด้านล่าง": "Drag blocks from the left onto the workspace: start with a block that loads data, then snap the next one underneath",
 "ลากบล็อกตัวแปร k ไปวางทับเลข 5 ในช่อง n_neighbors": "Drag the variable k block onto the 5 in the n_neighbors slot",
 "ลากบล็อกตัวแปรหรือค่ามาใส่ในช่องที่ว่าง": "Drag a variable or value block into the empty slot",
 "ลากบล็อกที่ยังลอยอยู่มาต่อใต้โปรแกรมหลักให้เป็นสายเดียวกัน": "Drag the loose blocks under the main program so they form one chain",
@@ -2208,10 +2278,12 @@ PB.I18N_EN = {
 "อย่าใช้ StandardScaler กับ MultinomialNB หรือใช้ GaussianNB แทน": "Do not use StandardScaler with MultinomialNB, or use GaussianNB instead",
 "ออกจากแบบฝึกหัด": "Leave exercises",
 "ออกจากโหมดแบบฝึกหัดแล้ว กลับมาที่งานเดิมของคุณ (งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง)": "Left exercise mode; your own work is back (the exercise work is saved and can be continued later)",
+"ออกจากโหมดแบบฝึกหัดแล้ว งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง": "Left exercise mode (the exercise work is saved and can be continued later)",
 "อัตรารอดชีวิต:": "Survival rate:",
 "อัตราสิ้นเปลืองน้ำมัน": "Fuel economy",
 "อัตโนมัติ": "Automatic",
 "อัปโหลดไฟล์": "Upload file",
+"อัปโหลดไฟล์ CSV หรือ Excel ของคุณ หรือเลือกชุดข้อมูลตัวอย่าง": "Upload your own CSV or Excel file, or pick a sample dataset",
 "อัปโหลดไฟล์นี้อีกครั้งด้วยปุ่ม \"ข้อมูลของฉัน\"": "Upload this file again with the \"My data\" button",
 "อัปโหลดไฟล์ใหม่ (.csv .xlsx .json)": "Upload a new file (.csv .xlsx .json)",
 "อายุก่อนแก้: จุดคือค่าผิดปกติ": "Ages before the fix: the dots are outliers",
@@ -2299,6 +2371,7 @@ PB.I18N_EN = {
 "เพิ่มบล็อกต่อท้ายแล้ว กด ▶ รัน ได้เลย": "Blocks appended; press ▶ Run",
 "เพิ่มบล็อกอ่านไฟล์": "Add a read-file block",
 "เพิ่มบล็อกอ่านไฟล์ไว้ท้ายพื้นที่ทำงานแล้ว": "Added a read-file block at the end of the workspace",
+"เพิ่มบล็อกโหลดข้อมูลไว้ท้ายพื้นที่ทำงานแล้ว": "Added blocks that load the data at the end of the workspace",
 "เพื่อนบ้านใกล้สุด (KNN)": "nearest neighbors (KNN)",
 "เม.ย.": "Apr",
 "เมทริกซ์ข้อความใหญ่เกินไปสำหรับการคำนวณในเบราว์เซอร์": "The text matrix is too large to compute in the browser",
@@ -2306,6 +2379,7 @@ PB.I18N_EN = {
 "เริ่ม": "Start",
 "เริ่มข้อนี้ใหม่? บล็อกที่ต่อไว้ในข้อนี้จะหายไป": "Restart this exercise? The blocks you built for it will be lost",
 "เริ่มข้อแรก": "Start the first exercise",
+"เริ่มงานใหม่": "New program",
 "เริ่มใหม่": "Restart",
 "เรียงลำดับ": "sort",
 "เรียงลำดับ %1 %2 %3": "sort %1 %2 %3",
@@ -2332,6 +2406,7 @@ PB.I18N_EN = {
 "เลือกรูปแบบแล้วกด \"แปล\" Claude จะอ่านโค้ด Python ของบล็อกทั้งหมดแล้วแปลให้": "Choose a format and press \"Translate\"; Claude reads the Python code of all the blocks and translates it",
 "เลือกหลายคอลัมน์ ได้ผลเป็น DataFrame": "Select several columns; the result is a DataFrame",
 "เลือกเฉพาะแถวที่ตรงเงื่อนไข เช่น df[df[\"age\"] > 30]": "Keep only the rows that meet a condition, e.g. df[df[\"age\"] > 30]",
+"เลือกโครงงาน แล้วแอปจะต่อบล็อกทั้งโปรแกรมและรันให้ทันที จากนั้นแก้บล็อกต่อได้ตามต้องการ": "Pick a project and the app builds the whole program and runs it. Then change any block you like.",
 "เลือกโมเดล": "Choose a model",
 "เลือกโมเดล (เลือกหลายตัว = เปรียบเทียบผล)": "Choose models (several = compare them)",
 "เลือกไฟล์": "Choose file",
@@ -2560,6 +2635,7 @@ PB.I18N_EN = {
 "ไม่ต้อง fit เอง cross_val_score ฝึกโมเดลให้ในแต่ละรอบ": "No need to fit yourself; cross_val_score trains the model in each fold",
 "ไม่ต้องจัดการ": "nothing to do",
 "ไม่ต้องตัดคำ ทนต่อคำสะกดผิด": "No word segmentation needed; tolerant of misspellings",
+"ไม่ต้องอัปโหลด เลือกแล้วแอปจะเพิ่มบล็อกโหลดข้อมูลและแสดง 5 แถวแรกให้": "Nothing to upload: pick one and the app adds the blocks that load it and shows the first 5 rows",
 "ไม่ทราบ": "Unknown",
 "ไม่ทำ": "Nothing",
 "ไม่บอกสายพันธุ์ ให้ K-Means แบ่งนกเพนกวินเป็น 3 กลุ่มจากขนาดปากและครีบ: ปรับสเกล X → `KMeans(n_clusters=3)` → เก็บป้ายกลุ่มในคอลัมน์ `cluster` แล้ววาด countplot ของ cluster แยกสีตาม species เพื่อดูว่ากลุ่มตรงกับสายพันธุ์จริงแค่ไหน": "Without telling it the species, let K-Means split the penguins into 3 groups by bill and flipper size: scale X → `KMeans(n_clusters=3)` → store the labels in the column `cluster`, then draw a countplot of cluster colored by species to see how well the groups match the real species",
@@ -10479,6 +10555,8 @@ def thai_tokenize_nostop(text):
       report: '<path d="M5 2.8h7l3.5 3.5v10.9H5zM12 2.8v3.5h3.5M7.5 14.5v-3M10 14.5V9.5M12.5 14.5v-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       broom: '<path d="M16.2 2.6l-5 6.6M8.4 8.2l5.2 3.4-2.1 5.6H4.2zM7.1 17.2l1.5-4.4M9.6 17.2l1.2-3.4M4.2 3.3v3M2.7 4.8h3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       pdf: '<path d="M5 2.8h7l3.5 3.5v10.9H5zM12 2.8v3.5h3.5M10.2 8.6v5.6M7.8 11.9l2.4 2.4 2.4-2.4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      history: '<path d="M3.7 10a6.3 6.3 0 1 0 1.85-4.45M3.4 3.4v3.4h3.4M10 6.4V10l2.6 1.7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      folder: '<path d="M2.8 5.6c0-.8.6-1.4 1.4-1.4h3.5l1.7 1.9h6.4c.8 0 1.4.6 1.4 1.4v7.2c0 .8-.6 1.4-1.4 1.4H4.2c-.8 0-1.4-.6-1.4-1.4z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
     };
     const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     s.setAttribute('viewBox', '0 0 20 20'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = P[name] || '';
@@ -11694,11 +11772,14 @@ def thai_tokenize_nostop(text):
     ws.addChangeListener(onWsChange);
     new ResizeObserver(() => Blockly.svgResize(ws)).observe($('#blockly'));
   };
-  /* the workspace autosaves to the main draft, or to the open exercise's own slot in exercise mode */
+  /* the workspace autosaves to the main draft, or to the open exercise's own slot in exercise mode. The app opens
+     on a blank workspace (the start screen): the draft of an earlier visit stays until this visit has a program of
+     its own (A.blankStart is cleared by PB.ui.start when the workspace first holds blocks) */
   const saveDraftNow = () => {
     try {
       const state = Blockly.serialization.workspaces.save(A.ws);
-      if (A.ex && A.ex.active) A.ex.saveWork(state); else U.store.set('pyblocks.draft.v2', { ts: Date.now(), state });
+      if (A.ex && A.ex.active) A.ex.saveWork(state);
+      else if (!(A.blankStart && !A.ws.getTopBlocks(false).length)) U.store.set('pyblocks.draft.v2', { ts: Date.now(), state });
     } catch (e) { /* ignore */ }
   };
   const saveDraft = U.debounce(saveDraftNow, 700);
@@ -11735,6 +11816,7 @@ def thai_tokenize_nostop(text):
   }
   A._fresh = fresh;
   function onWsChange(e) {
+    if (A.start) A.start.onEvent(e);
     if (e.type === Blockly.Events.SELECTED) { A.onSelect(e.newElementId); return; }
     trackFresh(e);
     if (e.isUiEvent || e.type === Blockly.Events.VIEWPORT_CHANGE || e.type === Blockly.Events.TOOLBOX_ITEM_SELECT) return;
@@ -11753,6 +11835,7 @@ def thai_tokenize_nostop(text):
     try { Blockly.serialization.workspaces.load(state, ws); ws.clearUndo(); } finally { A.loading = false; }
     A.scrollToStart();
     A.knownCols.clear(); A.selectedId = null; A.onSelect(null);
+    if (A.start) A.start.update();
     saveDraft(); refreshDerived();
     if (run) setTimeout(() => A.run(), 60);
   };
@@ -11773,6 +11856,7 @@ def thai_tokenize_nostop(text):
     blocks.forEach((b, i) => { b.x = 24; b.y = bottom + 60 + i * 400; });
     A.appending = true;
     try { for (const b of blocks) Blockly.serialization.blocks.append(b, ws); } finally { A.appending = false; }
+    if (A.start) A.start.update();
     saveDraft(); refreshDerived();
   };
 
@@ -12536,12 +12620,16 @@ def thai_tokenize_nostop(text):
     renderBar();
     const prev = S.prev; S.prev = null;
     if (restore) {
+      /* back to the work that was open before the exercise; nothing there (it was opened from the start screen) → the start screen */
       const st = prev || (U.store.get('pyblocks.draft.v2') || {}).state;
-      A.loadProgram(st && st.blocks ? st : PB.SAMPLES[0].build());
+      const back = !!(st && st.blocks && st.blocks.blocks && st.blocks.blocks.length);
+      A.loadProgram(back ? st : {});
       A.out.clear(); A.vars = null; A.lastError = null; A.setErrorBadge(false); A.setStatus('', TR('พร้อมรัน'));
-      A.out.note(TR('ออกจากโหมดแบบฝึกหัดแล้ว กลับมาที่งานเดิมของคุณ (งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง)'));
+      A.out.note(back ? TR('ออกจากโหมดแบบฝึกหัดแล้ว กลับมาที่งานเดิมของคุณ (งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง)') : TR('ออกจากโหมดแบบฝึกหัดแล้ว งานในแบบฝึกหัดถูกเก็บไว้ ทำต่อได้ภายหลัง'));
       if (A.refreshVars) A.refreshVars();
+      if (!back && A.start) A.start.reset();
     }
+    if (A.start) A.start.update();
     if (A.isPhone()) A.setView('blocks'); else if (A.panel === 'task') A.setPanel('out');
   };
   /* resume after a reload */
@@ -13567,6 +13655,170 @@ ${parts.join('\n')}
   };
 })();
 
+/* ---- ui/start.js ---- */
+/* ThaiPyBlocks: the start screen — what an empty workspace shows. Opening the app (a new tab or visit) starts
+   here on a blank workspace, with four ways in: start a new program, open data, a sample project or an exercise,
+   and "continue" when this browser has saved work. Reloading the page or switching language comes back to the
+   work that was open instead (this tab remembers it in sessionStorage). */
+(function () {
+  const U = PB.u, h = U.h, $ = U.$, A = (PB.ui = PB.ui || {});
+  const DRAFT = 'pyblocks.draft.v2', EX_ACTIVE = 'pyblocks.ex.active', EX_DONE = 'pyblocks.ex.done.v1', SESSION = 'pyblocks.session';
+  /* booted: boot has finished · dismissed: "start new" put the screen away until the workspace is cleared again ·
+     pendingEx: the exercise that was open when the app was last closed, offered as "continue" */
+  const S = { booted: false, dismissed: false, shown: false, pendingEx: null, el: null, timer: 0 };
+
+  /* this tab's own memory: 'work' while a program or an exercise is open, so a reload or a language switch
+     brings it back; a new tab or visit has none and opens on the start screen */
+  const session = {
+    get() { try { return sessionStorage.getItem(SESSION); } catch (e) { return null; } },
+    set(v) { try { if (v) sessionStorage.setItem(SESSION, v); else sessionStorage.removeItem(SESSION); } catch (e) { /* storage unavailable */ } },
+  };
+
+  /* ---------------- the saved work, described ---------------- */
+  /* number of blocks and the data the program reads, from a saved workspace (no workspace needed) */
+  function summary(state) {
+    let n = 0; const data = [];
+    const walk = (b) => {
+      if (!b || typeof b !== 'object') return;
+      n++;
+      const f = b.fields || {};
+      if (b.type === 'pb_dataset' && f.NAME) data.push(PB.DATASETS[f.NAME] ? PB.DATASETS[f.NAME].title : f.NAME);
+      if (b.type === 'pb_read_file' && f.FILE) data.push(f.FILE);
+      Object.values(b.inputs || {}).forEach((inp) => walk(inp && inp.block));
+      if (b.next) walk(b.next.block);
+    };
+    ((state && state.blocks && state.blocks.blocks) || []).forEach(walk);
+    return { n, data: Array.from(new Set(data)) };
+  }
+  /* "2 hours ago" / "2 ชั่วโมงที่ผ่านมา" in the interface language */
+  function ago(ts) {
+    const lang = PB.i18n.lang === 'en' ? 'en' : 'th';
+    let rtf;
+    try { rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' }); } catch (e) { return ''; }
+    const s = (ts - Date.now()) / 1000, a = Math.abs(s);
+    if (a < 60) return rtf.format(0, 'second');
+    if (a < 3600) return rtf.format(Math.round(s / 60), 'minute');
+    if (a < 86400) return rtf.format(Math.round(s / 3600), 'hour');
+    if (a < 86400 * 7) return rtf.format(Math.round(s / 86400), 'day');
+    try { return new Date(ts).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; }
+  }
+
+  /* ---------------- actions ---------------- */
+  /* the exercise left open last time is no longer offered once something else is started */
+  function forgetEx() {
+    if (S.pendingEx && U.store.get(EX_ACTIVE) === S.pendingEx) U.store.del(EX_ACTIVE);
+    S.pendingEx = null;
+  }
+  /* a blank workspace: put the start screen away and open the palette at the blocks that load data */
+  function startNew() {
+    S.dismissed = true; forgetEx(); update();
+    const tb = A.ws.getToolbox();
+    if (tb) {
+      const items = tb.getToolboxItems(), byName = (n) => items.find((i) => i.getName && i.getName() === n);
+      const cat = byName(TR('ข้อมูล')), sub = byName(TR('โหลด & สำรวจ'));
+      if (cat && cat.setExpanded) cat.setExpanded(true);
+      if (sub && sub.isSelectable()) tb.setSelectedItem(sub);
+    }
+    U.toast(TR('ลากบล็อกจากแถบซ้ายมาวางบนพื้นที่ทำงาน เริ่มจากบล็อกโหลดข้อมูล แล้วต่อบล็อกถัดไปไว้ด้านล่าง'), 4200);
+  }
+  /* the program saved in this browser (and, after a reload, the exercise that was open) */
+  A.restoreWork = ({ exercise = true } = {}) => {
+    const draft = U.store.get(DRAFT);
+    let loaded = false;
+    if (draft && draft.state && draft.state.blocks && draft.state.blocks.blocks && draft.state.blocks.blocks.length) {
+      try { A.loadProgram(draft.state); loaded = true; } catch (e) { loaded = false; }
+    }
+    const resumed = exercise && A.exResume ? A.exResume() : false;
+    const missing = [...new Set(A.ws.getAllBlocks(false).filter((b) => b.type === 'pb_read_file').map((b) => b.getFieldValue('FILE')).filter((n) => n && !PB.files.has(n)))];
+    if (resumed || !loaded) { /* exercise mode waits for "ตรวจคำตอบ" */ }
+    else if (missing.length) {
+      A.out.clear();
+      A.out.note(TR`เปิดโครงงานล่าสุดแล้ว โครงงานนี้อ่านไฟล์ ${missing.join(', ')} ซึ่งต้องอัปโหลดใหม่ทุกครั้งที่เปิดหน้า (ไฟล์อยู่ในเครื่องคุณเท่านั้น) กด "ข้อมูลของฉัน" เพื่ออัปโหลด แล้วกด ▶ รัน`);
+    } else setTimeout(() => A.run(), 120);
+    return loaded || resumed;
+  };
+  /* the sample projects as a gallery: one click builds the whole program and runs it */
+  A.openSampleGallery = () => {
+    const grid = h('div', { class: 'opt-grid sample-grid' }, PB.SAMPLES.map((s) => h('button', { type: 'button', class: 'opt', 'data-sample': s.id, onclick: () => { m.close(); A.loadProgram(s.build(), { run: true }); } }, h('b', {}, s.title), h('small', {}, s.sub))));
+    const m = U.modal({ title: TR('โครงงานตัวอย่าง'), body: h('div', {}, h('p', { class: 'dlg-lead' }, TR('เลือกโครงงาน แล้วแอปจะต่อบล็อกทั้งโปรแกรมและรันให้ทันที จากนั้นแก้บล็อกต่อได้ตามต้องการ')), grid) });
+  };
+
+  /* ---------------- the screen ---------------- */
+  /* a start choice drawn as a block: notch on top, tab below, in the colour of the blocks it leads to */
+  const choice = (kind, icon, title, desc, run) => h('button', { type: 'button', class: 'sb sb-' + kind, 'data-start': kind, onclick: run },
+    h('span', { class: 'sb-icon' }, U.icon(icon)), h('span', { class: 'sb-title' }, title), desc ? h('span', { class: 'sb-desc' }, desc) : null);
+  function render() {
+    const el = S.el; el.textContent = '';
+    const draft = U.store.get(DRAFT), info = draft && draft.state ? summary(draft.state) : { n: 0, data: [] };
+    const EX = PB.EXERCISES || [], done = U.store.get(EX_DONE) || {}, nDone = EX.filter((e) => done[e.id]).length;
+    const levels = new Set(EX.map((e) => e.level)).size;
+    const ex = S.pendingEx ? EX.find((e) => e.id === S.pendingEx) : null;
+
+    const head = h('div', { class: 'start-head' },
+      h('h2', { id: 'start-title' }, TR('จะเริ่มจากตรงไหนดี?')),
+      h('p', {}, TR('ต่อบล็อกเป็นโปรแกรม Python วิเคราะห์ข้อมูลและสร้างโมเดล Machine Learning พร้อมแปลคำสั่งเป็นภาษาไทย')));
+    const resume = [];
+    /* only the work of an earlier visit: once this visit has a program of its own, the draft is that program */
+    if (A.blankStart && info.n) {
+      const shown = info.data.slice(0, 2).join(', ') + (info.data.length > 2 ? ' …' : '');
+      const meta = [TR`${info.n} บล็อก`, shown ? TR`ข้อมูล ${shown}` : '', draft.ts ? ago(draft.ts) : ''].filter(Boolean).join(' · ');
+      resume.push(choice('resume', 'history', TR('ทำต่อจากครั้งก่อน'), meta, () => A.restoreWork({ exercise: false })));
+    }
+    if (ex) resume.push(choice('resume', 'task', TR`ทำแบบฝึกหัดต่อ: ข้อ ${ex.n}`, ex.title, () => { S.pendingEx = null; A.exStart(ex.id); }));
+    const grid = h('div', { class: 'sb-grid' },
+      choice('new', 'plus', TR('เริ่มงานใหม่'), TR('ต่อบล็อกเองตั้งแต่ต้น ลากบล็อกจากแถบซ้ายมาวางบนพื้นที่ทำงาน'), startNew),
+      choice('data', 'data', TR('ข้อมูล'), TR('อัปโหลดไฟล์ CSV หรือ Excel ของคุณ หรือเลือกชุดข้อมูลตัวอย่าง'), () => A.openData()),
+      choice('samples', 'book', TR('โครงงานตัวอย่าง'), TR`${PB.SAMPLES.length} โครงงานพร้อมรัน ทั้งตาราง ข้อความ อนุกรมเวลา และรูปภาพ`, () => A.openSampleGallery()),
+      choice('exercises', 'task', TR('แบบฝึกหัด'), nDone ? TR`ทำผ่านแล้ว ${nDone} จาก ${EX.length} ข้อ` : TR`${EX.length} ข้อ ${levels} ระดับ ต่อบล็อกตามโจทย์ ตรวจคำตอบอัตโนมัติ`, () => A.openExercises()));
+    const tool = (icon, label, run) => h('button', { type: 'button', class: 'btn btn-sm btn-ghost', onclick: run }, U.icon(icon), label);
+    const tools = h('div', { class: 'start-tools' },
+      tool('wand', TR('ตัวช่วยเลือกโมเดล'), () => A.openWizard()),
+      tool('broom', TR('ทำความสะอาดข้อมูล'), () => A.openWizard({ task: 'clean' })),
+      tool('folder', TR('เปิดโครงงาน'), () => A.openProject()));
+    el.appendChild(h('div', { class: 'start-in' }, head, resume.length ? h('div', { class: 'sb-resume-list' }, resume) : null, grid, tools));
+  }
+  function update() {
+    S.timer = 0;
+    const ws = A.ws; if (!ws) return;
+    const has = ws.getTopBlocks(false).length > 0, ex = !!(A.ex && A.ex.active);
+    /* the workspace holds this visit's own program: autosave may now replace the draft of an earlier visit */
+    if (has && !ex) { A.blankStart = false; forgetEx(); }
+    if (!S.booted) return;
+    session.set(has || ex ? 'work' : null);
+    if (!S.el) return;
+    const show = !has && !ex && !S.dismissed;
+    if (show && !S.shown) render();
+    S.shown = show;
+    S.el.hidden = !show;
+    document.body.classList.toggle('on-start', show);
+    if (!show) return;
+    /* desktop: the screen sits right of the palette, and steps aside while a palette category is open */
+    const tb = ws.getToolbox(), fly = tb && tb.getFlyout();
+    S.el.style.setProperty('--tbx', (tb ? tb.getWidth() : 0) + 'px');
+    S.el.classList.toggle('is-away', !!(fly && fly.isVisible()));
+  }
+  const later = () => { if (!S.timer) S.timer = setTimeout(update, 0); };
+  const EVENTS = () => [Blockly.Events.BLOCK_CREATE, Blockly.Events.BLOCK_DELETE, Blockly.Events.TOOLBOX_ITEM_SELECT, Blockly.Events.FINISHED_LOADING];
+
+  A.start = {
+    /* boot: true when this tab already had work open (a reload or a language switch) */
+    reopening: () => session.get() === 'work',
+    init() {
+      S.el = h('section', { class: 'start', id: 'start', 'aria-labelledby': 'start-title', hidden: true });
+      $('.pane-blocks').appendChild(S.el);
+      window.addEventListener('resize', U.debounce(update, 120));
+    },
+    boot({ fresh }) {
+      S.pendingEx = fresh ? U.store.get(EX_ACTIVE) : null;
+      S.booted = true; update();
+    },
+    onEvent(e) { if (EVENTS().includes(e.type)) later(); },
+    update,
+    /* the workspace was cleared on purpose (or an exercise left nothing behind): show the screen again */
+    reset() { S.dismissed = false; update(); },
+  };
+})();
+
 /* ---- ui/app_panels.js ---- */
 /* ThaiPyBlocks: panels (Python, translation, variables), model wizard, data upload, exports, boot. */
 (function () {
@@ -13882,6 +14134,13 @@ ${parts.join('\n')}
     });
     document.body.appendChild(inp); inp.click();
   };
+  /* blocks that load data: on an empty workspace they become the program and run, otherwise they go below it */
+  A.addData = (prog, note) => {
+    if (!A.ws.getTopBlocks(false).length && !(A.ex && A.ex.active)) A.loadProgram(prog, { run: true });
+    else { A.appendProgram(prog); U.toast(note); }
+  };
+  const headOf = (v) => PB.R.print(PB.R.b('pb_df_view', { DF: { name: v }, FN: 'head', N: 5 }));
+  const DTYPE_TH = { table: TR('ตาราง'), text: TR('ข้อความ'), timeseries: TR('อนุกรมเวลา'), image: TR('รูปภาพ') };
   A.openData = () => {
     const list = h('div', { class: 'file-list' });
     const drop = h('div', { class: 'file-drop' }, h('b', {}, TR('ลากไฟล์มาวางที่นี่ หรือเลือกไฟล์')), h('span', { class: 'muted' }, TR('รองรับ CSV, TSV, Excel (.xlsx), JSON · ภาษาไทย UTF-8 และ TIS-620 · ไฟล์อยู่ในเครื่องคุณเท่านั้น ไม่ถูกอัปโหลดไปไหน')), h('button', { class: 'btn btn-accent', onclick: () => A.pickFile() }, U.icon('upload'), TR('เลือกไฟล์')));
@@ -13890,7 +14149,7 @@ ${parts.join('\n')}
     drop.addEventListener('drop', async (e) => { e.preventDefault(); for (const f of e.dataTransfer.files) { try { await A.readFile(f); } catch (err) { U.alert(TR('อ่าน ') + f.name + TR(' ไม่สำเร็จ: ') + (err.thai || err.message)); } } render(); });
     const render = () => {
       list.textContent = '';
-      if (!PB.files.size) { list.appendChild(h('div', { class: 'muted' }, TR('ยังไม่มีไฟล์ของคุณ ลองใช้ข้อมูลตัวอย่างในตัวช่วยเลือกโมเดลก่อนก็ได้'))); return; }
+      if (!PB.files.size) { list.appendChild(h('div', { class: 'muted' }, TR('ยังไม่มีไฟล์ของคุณ อัปโหลดไฟล์ด้านบน หรือเลือกชุดข้อมูลตัวอย่างด้านล่าง'))); return; }
       for (const [name, f] of PB.files) {
         const df = f.df;
         const types = df.columns.slice(0, 8).map((c) => h('span', { class: 'chip' }, c, h('small', {}, PB.dtypeLabel(df.dtypeOf(c)))));
@@ -13899,7 +14158,7 @@ ${parts.join('\n')}
           h('div', { class: 'chips' }, types, df.ncols > 8 ? h('span', { class: 'muted' }, `+${df.ncols - 8}`) : null),
           A.renderTable(df.head(5)),
           h('div', { class: 'field-row' },
-            h('button', { class: 'btn btn-sm', onclick: () => { A.appendProgram(PB.R.program([PB.R.set('df', PB.R.b('pb_read_file', { FN: 'pd.read_csv', FILE: name })), PB.R.print(PB.R.b('pb_df_view', { DF: { name: 'df' }, FN: 'head', N: 5 }))])); m.close(); U.toast(TR('เพิ่มบล็อกอ่านไฟล์ไว้ท้ายพื้นที่ทำงานแล้ว')); } }, TR('เพิ่มบล็อกอ่านไฟล์')),
+            h('button', { class: 'btn btn-sm', onclick: () => { m.close(); A.addData(PB.R.program([PB.R.set('df', PB.R.b('pb_read_file', { FN: 'pd.read_csv', FILE: name })), headOf('df')]), TR('เพิ่มบล็อกอ่านไฟล์ไว้ท้ายพื้นที่ทำงานแล้ว')); } }, TR('เพิ่มบล็อกอ่านไฟล์')),
             h('button', { class: 'btn btn-sm btn-accent', onclick: () => { m.close(); A.openWizard({ file: name }); } }, U.icon('wand'), TR('วิเคราะห์ด้วยตัวช่วยเลือกโมเดล')),
             h('button', { class: 'btn btn-sm', onclick: () => { m.close(); A.openWizard({ file: name, task: 'clean' }); } }, U.icon('broom'), TR('ทำความสะอาดไฟล์นี้')),
             h('button', { class: 'btn btn-sm btn-ghost', onclick: () => { PB.files.delete(name); render(); } }, TR('นำออก'))));
@@ -13908,7 +14167,14 @@ ${parts.join('\n')}
     };
     A.dataDialogRefresh = render;
     render();
-    const m = U.modal({ title: TR('ข้อมูลของฉัน'), body: h('div', {}, drop, list), onClose: () => { A.dataDialogRefresh = null; } });
+    /* the datasets built into the app, for starting without a file of your own */
+    const samples = h('section', { class: 'data-samples' },
+      h('h3', {}, TR('ชุดข้อมูลตัวอย่างในแอป')),
+      h('p', { class: 'muted' }, TR('ไม่ต้องอัปโหลด เลือกแล้วแอปจะเพิ่มบล็อกโหลดข้อมูลและแสดง 5 แถวแรกให้')),
+      h('div', { class: 'opt-grid' }, Object.entries(PB.DATASETS).map(([key, d]) => h('button', { type: 'button', class: 'opt', 'data-dataset': key, title: d.desc,
+        onclick: () => { m.close(); A.addData(PB.R.program([PB.R.set('df', PB.R.b('pb_dataset', { NAME: key })), headOf('df')]), TR('เพิ่มบล็อกโหลดข้อมูลไว้ท้ายพื้นที่ทำงานแล้ว')); } },
+        h('b', {}, d.title), h('small', {}, TR`${key} · ${d.rows.toLocaleString()} แถว · ${DTYPE_TH[d.type] || d.type}`)))));
+    const m = U.modal({ title: TR('ข้อมูลของฉัน'), body: h('div', {}, drop, list, samples), onClose: () => { A.dataDialogRefresh = null; } });
   };
 
   /* ======================= model wizard ======================= */
@@ -14260,8 +14526,14 @@ ${parts.join('\n')}
     '-',
     { title: TR('รันทีละขั้นช้า ๆ'), sub: TR`ตอนนี้ ${A.stepDelay} มิลลิวินาที/ขั้น`, run: () => { A.stepDelay = A.stepDelay >= 900 ? 250 : A.stepDelay + 300; U.toast(TR`ความเร็วทีละขั้น: ${A.stepDelay} มิลลิวินาที`); } },
     { title: TR('จัดเรียงบล็อก'), run: () => A.ws.cleanUp() },
-    { title: TR('ล้างพื้นที่ทำงาน'), sub: TR('ลบบล็อกทั้งหมด'), run: () => U.confirm(TR('ลบบล็อกทั้งหมดในพื้นที่ทำงาน?'), (ok) => { if (ok) { A.ws.clear(); A.out.clear(); A.vars = null; } }, TR('ลบทั้งหมด')) },
+    { title: TR('ล้างพื้นที่ทำงาน'), sub: TR('ลบบล็อกทั้งหมด แล้วกลับไปหน้าเริ่มต้น'), run: () => U.confirm(TR('ลบบล็อกทั้งหมดในพื้นที่ทำงาน?'), (ok) => {
+      if (!ok) return;
+      A.ws.clear(); A.out.clear(); A.vars = null; A.lastError = null; A.setErrorBadge(false); A.setStatus('', TR('พร้อมรัน'));
+      if (A.refreshVars) A.refreshVars();
+      if (A.start) A.start.reset();
+    }, TR('ลบทั้งหมด')) },
   ], { alignRight: true });
+  A.openProject = () => openProject();
   function openProject() {
     const inp = h('input', { type: 'file', accept: '.json', style: { display: 'none' } });
     inp.addEventListener('change', async () => {
@@ -14302,22 +14574,15 @@ ${parts.join('\n')}
     /* files uploaded before switching language come back with the page */
     const kept = await PB.i18n.restoreFiles();
     if (kept) U.toast(TR`ไฟล์ที่อัปโหลดไว้ ${kept} ไฟล์ยังอยู่ครบ`);
-    const draft = U.store.get('pyblocks.draft.v2');
-    let loaded = false;
-    if (draft && draft.state && draft.state.blocks && draft.state.blocks.blocks && draft.state.blocks.blocks.length) {
-      try { A.loadProgram(draft.state); loaded = true; } catch (e) { loaded = false; }
-    }
-    if (!loaded) A.loadProgram(PB.SAMPLES[0].build());
+    /* a new tab or visit opens on the start screen with a blank workspace (the saved work is offered there);
+       a reload or a language switch in this tab brings back the program or exercise that was open */
+    A.blankStart = true;
+    A.start.init();
+    const reopen = A.start.reopening();
+    if (reopen) A.restoreWork();
     A.onSelect(null);
-    /* reopen the exercise that was open before the page was reloaded */
-    const resumed = A.exResume ? A.exResume() : false;
     document.body.classList.add('ready');
-    const missing = [...new Set(A.ws.getAllBlocks(false).filter((b) => b.type === 'pb_read_file').map((b) => b.getFieldValue('FILE')).filter((n) => n && !PB.files.has(n)))];
-    if (resumed) { /* exercise mode: wait for "ตรวจคำตอบ" */ }
-    else if (missing.length) {
-      A.out.clear();
-      A.out.note(TR`เปิดโครงงานล่าสุดแล้ว โครงงานนี้อ่านไฟล์ ${missing.join(', ')} ซึ่งต้องอัปโหลดใหม่ทุกครั้งที่เปิดหน้า (ไฟล์อยู่ในเครื่องคุณเท่านั้น) กด "ข้อมูลของฉัน" เพื่ออัปโหลด แล้วกด ▶ รัน`);
-    } else setTimeout(() => A.run(), 120);
+    A.start.boot({ fresh: !reopen });
     if (window.claude && typeof window.claude.use === 'function') {
       window.claude.use('downloads').then((d) => { A.caps.downloads = d; U.$$('[data-needs="downloads"]').forEach((e) => { e.hidden = !d; }); }).catch(() => {});
       window.claude.use('sample').then((s) => { A.caps.sample = s; if (A.panel === 'translate') A.refreshTranslate(true); }).catch(() => {});

@@ -54,6 +54,8 @@
       report: '<path d="M5 2.8h7l3.5 3.5v10.9H5zM12 2.8v3.5h3.5M7.5 14.5v-3M10 14.5V9.5M12.5 14.5v-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       broom: '<path d="M16.2 2.6l-5 6.6M8.4 8.2l5.2 3.4-2.1 5.6H4.2zM7.1 17.2l1.5-4.4M9.6 17.2l1.2-3.4M4.2 3.3v3M2.7 4.8h3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       pdf: '<path d="M5 2.8h7l3.5 3.5v10.9H5zM12 2.8v3.5h3.5M10.2 8.6v5.6M7.8 11.9l2.4 2.4 2.4-2.4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      history: '<path d="M3.7 10a6.3 6.3 0 1 0 1.85-4.45M3.4 3.4v3.4h3.4M10 6.4V10l2.6 1.7" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      folder: '<path d="M2.8 5.6c0-.8.6-1.4 1.4-1.4h3.5l1.7 1.9h6.4c.8 0 1.4.6 1.4 1.4v7.2c0 .8-.6 1.4-1.4 1.4H4.2c-.8 0-1.4-.6-1.4-1.4z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
     };
     const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     s.setAttribute('viewBox', '0 0 20 20'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = P[name] || '';

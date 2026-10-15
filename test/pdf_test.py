@@ -197,6 +197,7 @@ with sync_playwright() as p:
 
     # ---------- 9. the PDF button: claude.ai downloads capability ----------
     ctx, page, errs, _ = boot(browser, mock=True)
+    run(page, 'iris')       # the app opens on the start screen: results to export come from the first sample
     page.wait_for_function('!document.querySelector(\'[data-act="pdf"]\').hidden', timeout=10000)
     page.click('[data-act="pdf"]')
     page.wait_for_function('window.__saves.length > 0', timeout=60000)
@@ -222,6 +223,7 @@ with sync_playwright() as p:
 
     # ---------- 10. plain web page (GitHub Pages): the browser downloads the file ----------
     ctx, page, errs, _ = boot(browser, downloads=True)
+    run(page, 'iris')
     results.append(check('PDF button shown on a plain web page', not page.evaluate('document.querySelector(\'[data-act="pdf"]\').hidden')))
     with page.expect_download(timeout=60000) as dl:
         page.click('[data-act="pdf"]')

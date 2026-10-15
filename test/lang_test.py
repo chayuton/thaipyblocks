@@ -4,7 +4,8 @@ Every sample project runs and its outputs, Python code (comments) and explanatio
 category, the model wizard for each data type, the cleaning assistant, My data, the variables / code / explain tabs,
 error messages, the HTML report and all 21 exercises (solutions must pass) are scanned for Thai text, and TR() must
 never meet a text missing from src/i18n_en.js. Thai that is data is allowed: the Thai reviews, the coffee shop's
-place names and placeholder words, Thai sample sentences, the Thai month names of the date formats. Then switching language with the button keeps the
+place names and placeholder words, Thai sample sentences, the Thai month names of the date formats, the misspelled place names
+the orders dataset's description quotes. Then switching language with the button keeps the
 blocks and the uploaded file, and switches back.
 Run: python3 test/lang_test.py
 """
@@ -17,7 +18,8 @@ FILES = os.path.join(ROOT, 'test', 'files')
 THAI = re.compile(r'[฀-฾เ-๿]+')        # Thai letters (the baht sign ฿ alone is fine)
 DATA = ['อาหารอร่อยมาก ส่งไวด้วย', 'อาหารอร่อย ส่งไว ประทับใจมาก', 'อาหารอร่อย ส่งไว ประทับใจ', 'ของดีมาก ส่งไว แพ็คมาอย่างดี',
         'กรุงเทพ', 'กทม', 'ไม่ระบุ', 'บาท', 'ภาษาไทย', 'ไทย', 'ที่ และ ของ มาก', 'ที่ และ ของ', 'ที่ และ มาก', 'ไม่ อร่อย', 'บวก', 'ลบ',
-        'ม.ค.', 'มกราคม']   # 3.8: the date formats parse_dates reads (Thai month names) in its tooltip
+        'ม.ค.', 'มกราคม',   # 3.8: the date formats parse_dates reads (Thai month names) in its tooltip
+        'เชียงไหม่', 'ขอนเเก่น']   # 3.9: misspelled place names the orders dataset's description quotes (tooltip in My data)
 ok_all = []
 def check(label, cond, extra=''):
     print(('PASS ' if cond else 'FAIL ') + label + (f' — {extra}' if extra else ''))

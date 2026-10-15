@@ -5,6 +5,7 @@ The files the page loads from CDNs (Blockly, SheetJS, Google Fonts) are answered
 vendor/node_modules, and every other outside request is refused and reported.
 
 The test runs:
+- the start screen the app opens on, with a sample project picked there (also on a phone, from a file, at the site root)
 - all sample projects
 - the model wizard for every dataset × task × evaluation × data-preparation option
 - the cleaning assistant
@@ -177,6 +178,21 @@ def menu(page, text):
     page.click(f'.menu button:has-text("{text}")')
 
 
+# the start screen the app opens on: is it shown over a blank workspace, and which choices does it offer
+START = '''() => { const s = document.querySelector('#start');
+  return { shown: !!s && !s.hidden, blocks: PB.ui.ws.getTopBlocks(false).length, cells: document.querySelectorAll('#out-body .cell').length,
+           choices: Array.from(document.querySelectorAll('#start [data-start]')).map((b) => b.dataset.start) }; }'''
+
+
+def start_sample(page, sid='iris', tap=False):
+    """on the start screen: "โครงงานตัวอย่าง" → the sample project sid, then wait for its run"""
+    act = page.tap if tap else page.click
+    act('#start [data-start="samples"]')
+    page.wait_for_selector(f'.modal [data-sample="{sid}"]')
+    act(f'.modal [data-sample="{sid}"]')
+    page.wait_for_timeout(300); page.wait_for_function('!PB.ui.running', timeout=120000)
+
+
 def main():
     global FONT_CSS
     if not os.path.isdir(os.path.join(VENDOR, 'blockly')):
@@ -192,9 +208,13 @@ def main():
         # ---------- 1. the page as GitHub Pages serves it ----------
         ctx, page = new_page(browser, viewport={'width': 1440, 'height': 900}, permissions=['clipboard-read', 'clipboard-write'])
         boot(page, BASE)
-        info = last_run(page)
+        st = page.evaluate(START)
         ok('opens at /thaipyblocks/ with the title ThaiPyBlocks', page.title() == 'ThaiPyBlocks', page.title())
-        ok('the first sample project runs on opening', not info['err'] and info['cells'] > 0, str(info))
+        ok('opens on the start screen: blank workspace with new program / data / sample projects / exercises',
+           st['shown'] and st['blocks'] == 0 and st['cells'] == 0 and st['choices'] == ['new', 'data', 'samples', 'exercises'], str(st))
+        start_sample(page)
+        info = last_run(page)
+        ok('the first sample project, picked on the start screen, runs', not info['err'] and info['cells'] > 0 and not page.evaluate(START)['shown'], str(info))
         ok('PDF and HTML-report buttons shown on a plain web page',
            page.evaluate('["pdf", "report"].every((a) => !document.querySelector(`.panel-head [data-act="${a}"]`).hidden)'))
         n_cat = page.evaluate('PB.ui.ws.getToolbox().getToolboxItems().length')
@@ -379,24 +399,31 @@ def main():
         ctx.close()
         ctx, page = new_page(browser, viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, device_scale_factor=2)
         boot(page, BASE)
+        cover = page.evaluate('(() => { const s = document.querySelector("#start"), r = s.getBoundingClientRect(); return !s.hidden && r.left === 0 && r.width === document.querySelector(".pane-blocks").getBoundingClientRect().width; })()')
+        start_sample(page, tap=True)
         seen = []
         visible = page.evaluate('getComputedStyle(document.querySelector(".mnav")).display !== "none"')
         for v in ['out', 'code', 'translate', 'vars', 'blocks']:
             page.tap(f'.mnav button[data-view="{v}"]'); page.wait_for_timeout(250)
             seen.append(page.evaluate('document.querySelector(".studio").dataset.view'))
         info = last_run(page)
-        ok('phone layout: bottom bar switches blocks / results / Python / explain / variables', visible and seen == ['out', 'code', 'translate', 'vars', 'blocks'] and not info['err'] and info['cells'] > 0, str(seen))
+        ok('phone layout: the start screen fills the blocks view, then the bottom bar switches blocks / results / Python / explain / variables',
+           cover and visible and seen == ['out', 'code', 'translate', 'vars', 'blocks'] and not info['err'] and info['cells'] > 0, str(seen))
         ctx.close()
         ctx, page = new_page(browser, viewport={'width': 1280, 'height': 800})
         boot(page, pathlib.Path(REPO, 'index.html').as_uri())
+        st = page.evaluate(START)
+        start_sample(page)
         info = last_run(page)
-        ok('index.html opened straight from the folder (file://) works', not info['err'] and info['cells'] > 0, str(info))
+        ok('index.html opened straight from the folder (file://) works', st['shown'] and not info['err'] and info['cells'] > 0, str(info))
         ctx.close()
         root, root_origin = serve(Quiet)
         ctx, page = new_page(browser, viewport={'width': 1280, 'height': 800})
         boot(page, root_origin + '/')
+        st = page.evaluate(START)
+        start_sample(page)
         info = last_run(page)
-        ok('served at the site root (user site or custom domain) works', not info['err'] and info['cells'] > 0, str(info))
+        ok('served at the site root (user site or custom domain) works', st['shown'] and not info['err'] and info['cells'] > 0, str(info))
         ctx.close(); root.shutdown()
         browser.close()
     httpd.shutdown()

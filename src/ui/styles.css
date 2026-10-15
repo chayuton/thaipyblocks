@@ -110,7 +110,8 @@ button { cursor: pointer; }
 
 .studio { display: grid; grid-template-columns: minmax(0, 1fr) 6px minmax(340px, var(--side-w, 44%)); min-height: 0; }
 .pane { min-width: 0; min-height: 0; position: relative; }
-.pane-blocks { display: grid; grid-template-rows: 1fr auto; background: var(--canvas); }
+/* isolate: the palette, its flyout and the start screen stack inside this pane, under menus and dialogs */
+.pane-blocks { display: grid; grid-template-rows: 1fr auto; background: var(--canvas); isolation: isolate; }
 #blockly { position: relative; min-height: 0; }
 .splitter { background: var(--line-soft); cursor: col-resize; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 .splitter:hover, .splitter.dragging { background: var(--accent-soft); }
@@ -477,6 +478,61 @@ label.cl-title { cursor: pointer; }
 .ex-item-text b { font-weight: 600; }
 .ex-item-text small { color: var(--ink-3); font-size: 12px; }
 
+/* ---------- start screen (src/ui/start.js) ----------
+   An empty workspace with the ways to begin, drawn as blocks lying on the canvas: each choice has a block's
+   notch and tab and the colour of the blocks it leads to (data = teal, models = purple …). On a computer it sits
+   right of the palette and steps aside while a palette category is open; on a phone it covers the whole pane. */
+.start { position: relative; grid-row: 1; grid-column: 1; z-index: 4; display: flex; min-width: 0; min-height: 0; overflow: auto; margin-left: var(--tbx, 0px); pointer-events: none; transition: opacity .14s ease; container: start / inline-size; }
+.start.is-away { opacity: 0; visibility: hidden; transition: opacity .14s ease, visibility 0s linear .14s; }
+.start-in { margin: auto; width: 100%; max-width: 580px; padding: 28px 28px 32px; pointer-events: auto; }
+.start-head { margin-bottom: 24px; }
+.start-head h2 { margin: 0 0 6px; font: 700 26px/1.25 var(--font-display); color: var(--ink); text-wrap: balance; }
+.start-head p { margin: 0; max-width: 46ch; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
+.sb-resume-list { display: grid; gap: 18px; margin-bottom: 26px; }
+.sb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--sb-min, 200px), 1fr)); gap: 20px 14px; }
+.sb { --c: #2c69b0; --c-ink: #ffffff; --fill: var(--c); position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); align-content: start; gap: 2px 10px; min-height: 88px; padding: 14px 16px 15px; border: 0; border-radius: 8px; background: var(--fill); color: var(--c-ink); text-align: left; transition: transform .12s ease; }
+/* the notch a block above would plug into, and the tab that reaches the block below */
+.sb::before, .sb::after { content: ""; position: absolute; left: 18px; width: 30px; height: 7px; border-radius: 0 0 7px 7px; }
+.sb::before { top: 0; background: var(--canvas); }
+.sb::after { bottom: -7px; background: var(--fill); }
+.sb:hover { --fill: color-mix(in srgb, var(--c) 87%, #ffffff); transform: translateY(-2px); }
+.sb:active { --fill: color-mix(in srgb, var(--c) 90%, #000000); transform: none; }
+.sb:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sb-icon { grid-row: 1 / span 2; display: flex; padding-top: 2px; }
+.sb-icon svg { width: 20px; height: 20px; }
+.sb-title { font-size: 16px; font-weight: 600; line-height: 1.35; }
+.sb-desc { grid-column: 2; font-size: 13px; line-height: 1.5; }
+.sb-resume { --c: var(--signal); --c-ink: var(--signal-ink); min-height: 0; }
+.sb-new { --c: #2c69b0; }
+.sb-data { --c: #0e7c86; }
+.sb-samples { --c: #6d4bc3; }
+.sb-exercises { --c: #a23b72; }
+.start-tools { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); }
+.start-tools .btn { color: var(--ink-2); padding: 0 8px; }
+.start-tools .btn:hover { color: var(--ink); }
+body.on-start .canvas-tools { display: none; }
+/* a narrow canvas (phone, small laptop): two columns of smaller blocks, the icon above the title */
+@container start (max-width: 519px) {
+  .start-in { padding: 22px 16px 28px; }
+  .start-head { margin-bottom: 20px; }
+  .start-head h2 { font-size: 22px; }
+  .start-head p { font-size: 13.5px; }
+  .sb-grid { --sb-min: 136px; gap: 18px 10px; }
+  .sb { grid-template-columns: minmax(0, 1fr); gap: 2px; min-height: 0; padding: 13px 13px 14px; }
+  .sb::before, .sb::after { left: 14px; width: 26px; }
+  .sb-icon { grid-row: auto; padding: 0 0 4px; }
+  .sb-desc { grid-column: 1; font-size: 12.5px; }
+  .sb-resume { grid-template-columns: 22px minmax(0, 1fr); gap: 2px 10px; }
+  .sb-resume .sb-icon { grid-row: 1 / span 2; padding: 2px 0 0; }
+  .sb-resume .sb-desc { grid-column: 2; }
+  .start-tools { margin-top: 24px; }
+}
+/* "ข้อมูลของฉัน": the datasets built into the app · the sample-project gallery */
+.data-samples { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.data-samples h3 { margin: 0 0 2px; font: 600 15px var(--font-display); }
+.data-samples > .muted { margin: 0 0 10px; }
+.dlg-lead { margin: 0 0 12px; color: var(--ink-2); }
+
 /* ---------- mobile ---------- */
 .mnav { display: none; }
 @media (max-width: 899px) {
@@ -513,8 +569,11 @@ label.cl-title { cursor: pointer; }
   .scrim { padding: 8px; align-items: end; }
   .opt-grid { grid-template-columns: 1fr 1fr; }
   .canvas-tools { margin: 0 10px 12px 0; }
+  /* the start screen covers the palette too (it comes back with "เริ่มงานใหม่"), on the canvas's dotted grid */
+  .start { margin-left: 0; z-index: 75; pointer-events: auto; background-color: var(--canvas); background-image: radial-gradient(circle at 1px 1px, rgba(120, 135, 155, .32) 1px, transparent 1.4px); background-size: 24px 24px; }
 }
 @media (max-width: 420px) { .opt-grid, .opt-grid.two { grid-template-columns: 1fr; } .tb-hide-xs { display: none !important; } }
+@media (max-width: 420px) and (min-width: 340px) { .data-samples .opt-grid { grid-template-columns: 1fr 1fr; } }
 /* narrow phones: the results bar keeps one row (PDF, the report as an icon, "ล้าง") */
 @media (max-width: 480px) { .oh-full { display: none; } .lang-btn { display: none; } }   /* phones: the language switch is the first item of the ⋯ menu */
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
