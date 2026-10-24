@@ -12,9 +12,9 @@
 programs run in the browser with no install and no server, and the app exports .py / .ipynb / HTML / PDF.
 Time series get trend lines, moving averages, seasonal decomposition and trend + season forecasts, checked against a naive baseline or with TimeSeriesSplit.
 It opens on a blank start screen: a new program, your own data, a sample project or an exercise, or carry on with the work saved in the browser.
-The whole app is one static page, ready for GitHub Pages. This repository also holds the test suites and two classroom worksheets.*
+The whole app is one static page, served as-is by GitHub Pages or Vercel. This repository also holds the test suites and two classroom worksheets.*
 
-**เปิดใช้งาน:** <https://chayuton.github.io/thaipyblocks/> · **ดาวน์โหลด:** [Releases → v1.2.0](https://github.com/chayuton/thaipyblocks/releases/tag/v1.2.0)
+**เปิดใช้งาน:** <https://chayuton.github.io/thaipyblocks/> (GitHub Pages) · <https://thaipyblocks.vercel.app/> (Vercel) · **ดาวน์โหลด:** [Releases → v1.2.0](https://github.com/chayuton/thaipyblocks/releases/tag/v1.2.0)
 · **ใบงาน:** [K-Means](https://chayuton.github.io/thaipyblocks/worksheets/worksheet1_kmeans.pdf) · [Neural Network](https://chayuton.github.io/thaipyblocks/worksheets/worksheet2_neural_network.pdf)
 
 ---
@@ -54,7 +54,7 @@ The whole app is one static page, ready for GitHub Pages. This repository also h
 | [ข้อมูล mall_customers.csv](https://chayuton.github.io/thaipyblocks/worksheets/mall_customers.csv) · [seed_germination.csv](https://chayuton.github.io/thaipyblocks/worksheets/seed_germination.csv) | ให้นักศึกษาดาวน์โหลด แล้วอัปโหลดในแอป (ปุ่ม "ข้อมูลของฉัน") |
 
 รายละเอียดอยู่ใน [worksheets/README.md](worksheets/README.md) · ลิงก์ในตารางใช้ได้เมื่อเปิด GitHub Pages แล้ว
-(ถ้าติดตั้งใน repo ของตัวเอง ให้เปลี่ยน `chayuton` เป็นชื่อผู้ใช้ของคุณ)
+(ถ้าติดตั้งใน repo ของตัวเอง ให้เปลี่ยน `chayuton` เป็นชื่อผู้ใช้ของคุณ) · บน Vercel ไฟล์เดียวกันอยู่ที่ `https://thaipyblocks.vercel.app/worksheets/<ชื่อไฟล์>`
 เฉลยสำหรับผู้สอน (ไฟล์ PDF เฉลย ไฟล์เฉลยบล็อก และสคริปต์ที่สร้างใบงานกับเฉลย) เก็บแยกไว้กับผู้สอน ไม่ได้เผยแพร่ใน repo นี้
 
 ---
@@ -108,8 +108,27 @@ git push -u origin main
 
 หน้า repo → ไอคอนเฟืองของ **About**
 - Description: `ThaiPyBlocks — ต่อบล็อกเรียน Python ภาษาไทย / English ทุกบล็อกคือโค้ด pandas / scikit-learn จริง รันในเบราว์เซอร์`
-- Website: ลิงก์ GitHub Pages ของแอป
+- Website: ลิงก์ของแอป (GitHub Pages หรือ Vercel)
 - Topics: `python` `blockly` `pandas` `scikit-learn` `machine-learning` `data-science` `data-cleaning` `education` `thai` `pythainlp`
+
+---
+
+## ติดตั้งบน Vercel (ไม่ต้อง build) · แอปอยู่ที่ `https://<ชื่อโปรเจกต์>.vercel.app/`
+
+repo นี้มี `vercel.json` ที่ตั้งให้ Vercel ส่งไฟล์จากรากของ repo ตามเดิม (Framework Preset: Other · ไม่ติดตั้งแพ็กเกจ · ไม่ build)
+Vercel จึงไม่ตรวจว่าเป็นโปรเจกต์ Python จาก `requirements.txt` (ไฟล์นั้นใช้กับชุดทดสอบเท่านั้น)
+
+1. นำ repo ขึ้น GitHub ของตัวเองก่อน (แบบที่ 1, 2 หรือ 3 ด้านบน ไม่ต้องเปิด GitHub Pages ก็ได้)
+2. เปิด <https://vercel.com/new> เข้าสู่ระบบด้วยบัญชี GitHub แล้วกด **Import** ที่ repo นั้น (ครั้งแรกให้ติดตั้ง Vercel app บน GitHub และเลือก repo ที่ให้เข้าถึง)
+3. ตั้งชื่อโปรเจกต์ (เช่น `thaipyblocks`) · Framework Preset: **Other** · ไม่ต้องใส่ Build Command หรือ Environment Variables แล้วกด **Deploy**
+4. ประมาณ 1 นาทีจะได้ลิงก์ของแอป (ถ้าชื่อ `<ชื่อโปรเจกต์>.vercel.app` มีผู้ใช้แล้ว Vercel จะตั้งชื่ออื่นให้ ดูได้ที่ **Settings → Domains**)
+
+- หลังจากนั้นทุกครั้งที่ push ขึ้น `main` Vercel จะ deploy ใหม่เอง · branch อื่นและ Pull Request ได้ลิงก์ Preview แยกไว้ตรวจก่อน
+- ถ้าโปรเจกต์ใช้ **Standard Protection** (ดูที่ **Settings → Deployment Protection**) ลิงก์ Production เปิดได้ทุกคน
+  ส่วนลิงก์ Preview และลิงก์เฉพาะของแต่ละ deployment ต้องเข้าสู่ระบบ Vercel ก่อน จึงควรแจกนักศึกษาเฉพาะลิงก์ Production
+- ถ้านำไปเฉพาะบางไฟล์โดยไม่มี `vercel.json` ให้ตั้ง Framework Preset เป็น **Other** เองที่ **Settings → Build and Deployment**
+  (ถ้า Vercel เลือก Python ให้เอง deploy จะล้มด้วยข้อความ `PYTHON_ENTRYPOINT_NOT_FOUND`)
+- ใช้ GitHub Pages กับ Vercel พร้อมกันได้ ทั้งสองแห่งส่งไฟล์ชุดเดียวกันจาก branch `main`
 
 ---
 
@@ -187,12 +206,12 @@ sh test/run_all.sh
 python3 build.py      # เขียน index.html ใหม่ (และ dist/ สำหรับทดสอบ ซึ่ง git ไม่เก็บ)
 ```
 
-แล้ว commit ทั้ง `src/` และ `index.html` · GitHub Pages เปิด `index.html` ตรง ๆ ไม่ได้ build จาก `src/` จึงต้อง commit ไฟล์ที่ build ใหม่ทุกครั้ง
+แล้ว commit ทั้ง `src/` และ `index.html` · GitHub Pages และ Vercel เปิด `index.html` ตรง ๆ ไม่ได้ build จาก `src/` จึงต้อง commit ไฟล์ที่ build ใหม่ทุกครั้ง
 (อย่าแก้ `index.html` ด้วยมือ เพราะจะถูกเขียนทับเมื่อ build ครั้งต่อไป) · ก่อน commit ควรรัน `sh test/run_all.sh`
 
 | ไฟล์ / โฟลเดอร์ | คืออะไร |
 | --- | --- |
-| `index.html` | แอปที่ build แล้ว (ไฟล์เดียว ประมาณ 2.0 MB) เป็นไฟล์ที่ GitHub Pages เปิด |
+| `index.html` | แอปที่ build แล้ว (ไฟล์เดียว ประมาณ 2.0 MB) เป็นไฟล์ที่ GitHub Pages และ Vercel เปิด |
 | `build.py` | รวม `src/` เป็น `index.html` |
 | `src/index.html`, `src/ui/styles.css` | โครงหน้า ธีมสว่าง/มืด และ layout คอมพิวเตอร์/มือถือ |
 | `src/engine/` | เครื่องคำนวณ JavaScript ที่ให้ผลเหมือน pandas / scikit-learn / NumPy (รวมอนุกรมเวลา `timeseries.js`) และตัดคำไทยแบบ PyThaiNLP |
@@ -207,6 +226,7 @@ python3 build.py      # เขียน index.html ใหม่ (และ dist/
 | `requirements.txt` | แพ็กเกจ Python รุ่นที่ใช้ตรวจผล (สำหรับชุดทดสอบเท่านั้น) |
 | `docs/screenshot.png` | ภาพหน้าจอใน README (`python3 test/shots.py docs readme` สร้างใหม่) |
 | `.nojekyll` | ให้ GitHub Pages ส่งไฟล์ตามเดิมโดยไม่ผ่าน Jekyll |
+| `vercel.json` | ให้ Vercel ส่งไฟล์จากรากของ repo ตามเดิม (Framework Preset: Other · ไม่ติดตั้งแพ็กเกจ · ไม่ build) |
 
 ## ข้อจำกัดที่ควรรู้
 
