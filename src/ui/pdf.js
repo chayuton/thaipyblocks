@@ -55,13 +55,15 @@
     for (const cell of document.querySelectorAll('#out-body .cell')) {
       const k = cellCopy(cell);
       sheet.appendChild(k);
-      const old = k.querySelector('.chart');
-      if (cell._pbChart && old) {
-        /* the copied chart was laid out for the panel's width: draw it again for the page */
-        const box = old.parentNode; box.textContent = '';
-        PB.charts.render(cell._pbChart, box);
-        const live = cell.querySelector('.chart-head button');
-        if (live && live.getAttribute('aria-pressed') === 'true') { const b = box.querySelector('.chart-head button'); if (b) b.click(); }
+      const olds = k.querySelectorAll('.chart'), specs = cell._pbCharts || (cell._pbChart ? [cell._pbChart] : []);
+      if (specs.length && olds.length === specs.length) {
+        /* the copied charts were laid out for the panel's width: draw them again for the page */
+        const lives = cell.querySelectorAll('.chart-head button');
+        olds.forEach((old, i) => {
+          const box = old.parentNode; box.textContent = '';
+          PB.charts.render(specs[i], box);
+          if (lives[i] && lives[i].getAttribute('aria-pressed') === 'true') { const b = box.querySelector('.chart-head button'); if (b) b.click(); }
+        });
       }
       k.querySelectorAll('button, .tip, [hidden]').forEach((b) => b.remove());
     }

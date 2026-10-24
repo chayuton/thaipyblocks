@@ -382,6 +382,139 @@
     hints: [TR('ไปป์ไลน์รับข้อความดิบได้เลย ไม่ต้องแปลงข้อความเป็นตัวเลขเอง'), TR('หรือจะสร้าง `vectorizer = TfidfVectorizer(…)` ไว้ก่อน แล้วใส่ตัวแปร vectorizer ในช่องแรกของไปป์ไลน์ก็ได้'), TR('ngram_range=(1, 2) ใช้ทั้งคำเดี่ยวและคู่คำ เช่น "ไม่ อร่อย"')],
     learn: TR('TF-IDF เปลี่ยนคำเป็นตัวเลขโดยให้น้ำหนักคำที่เด่นในแต่ละรีวิว แล้ว Naive Bayes เรียนว่าคำไหนมักอยู่กับรีวิวบวกหรือลบ'),
   });
+  /* ===== level 4 (version 3.10): time series and trend forecasting, on the monthly airline passengers ===== */
+  const flightsDates = () => [set('df', ds('flights')), B('pb_date_range', { DF: df, NAME: 'date', START: '1949-01-01', FREQ: 'MS' })];
+  const seasonCols = () => [B('pb_time_index', { DF: df, NAME: 't' }), B('pb_set_col', { DF: df, NAME: 'month' }, { VAL: B('pb_col_func', { DF: df, COL: 'date', FN: 'month' }) }),
+    set('X', cols(['t', 'month'])), set('X', B('pb_get_dummies', { DF: V('X'), COLS: 'month', DROP: 'True' })), set('y', col('passengers'))];
+  const BK = PB.blocks;
+  /* a multi-line chart block that draws all the given columns */
+  const lines = (c, type, list) => c.has(type, (b) => list.every((x) => BK.splitCols(b.getFieldValue('COLS')).includes(x)));
+  /* reference values worked out from the sample data with the same engine functions */
+  const tsRef = () => ref('ts', () => {
+    const p = sample('flights').col('passengers'), y = p.values, n = y.length, tm = (n - 1) / 2, ym = mean(y);
+    let sxy = 0, sxx = 0;
+    y.forEach((v, i) => { sxy += (i - tm) * (v - ym); sxx += (i - tm) * (i - tm); });
+    const slope = sxy / sxx, seasonal = PB.decompose(p, 12, 'multiplicative').col('seasonal').values.slice(0, 12);
+    const last = y.slice(115 - 12, 115);
+    return { ma12: p.rolling(12).mean().values, ewm: p.ewm({ alpha: 0.3, adjust: false }).mean().values, slope, icpt: ym - slope * tm, seasonal, naive: PB.range(29).map((i) => last[i % 12]) };
+  });
+  const sameVals = (a, b) => !!a && a.length === b.length && a.every((v, i) => (missing(v) && missing(b[i])) || near(v, b[i], 1e-9));
+  const featNames = (m) => (m && m.feature_names_in_ ? Array.from(m.feature_names_in_) : []);
+  const MONTH_DUMMIES = ['t'].concat(PB.range(11).map((i) => 'month_' + (i + 2)));
+  add({
+    id: 'ts_dates', level: 4, title: TR('วันที่และกราฟตามเวลา'), topic: 'pd.date_range · lineplot', jigsaw: true,
+    goal: TR('ข้อมูลผู้โดยสารสายการบิน (`flights`) มีปีและชื่อเดือน แต่ยังไม่มีคอลัมน์วันที่ ให้สร้างคอลัมน์ `date` เป็นวันที่รายเดือน (freq "MS") เริ่ม 1949-01-01 แล้ววาดกราฟเส้นของ `passengers` ตาม `date`'),
+    start: () => ({ main: [note(TR('ผู้โดยสารสายการบินรายเดือน 1949–1960 (หน่วย: พันคน)')), set('df', ds('flights')), head(3)],
+      pieces: [B('pb_plot_xy', { KIND: 'lineplot', DF: df, X: 'date', Y: 'passengers', HUE: '', TITLE: TR('ผู้โดยสารรายเดือน') }), B('pb_date_range', { DF: df, NAME: 'date', START: '1949-01-01', FREQ: 'D' })] }),
+    solution: () => ({ main: [note(TR('ผู้โดยสารสายการบินรายเดือน 1949–1960 (หน่วย: พันคน)')), set('df', ds('flights')), head(3), B('pb_date_range', { DF: df, NAME: 'date', START: '1949-01-01', FREQ: 'MS' }), B('pb_plot_xy', { KIND: 'lineplot', DF: df, X: 'date', Y: 'passengers', HUE: '', TITLE: TR('ผู้โดยสารรายเดือน') })] }),
+    checks: [
+      { text: TR('`date` เป็นวันที่ต้นเดือน ตั้งแต่ 1949-01-01 ถึง 1960-12-01'), test: (c) => { const d = c.v('df'); if (!isDF(d) || d.dtypeOf('date') !== 'datetime64[ns]') return false; const v = d.col('date').values; return v[0] === Date.UTC(1949, 0, 1) && v[v.length - 1] === Date.UTC(1960, 11, 1); }, hint: TR('ในบล็อกสร้างคอลัมน์วันที่ เปลี่ยน freq จาก "D" (รายวัน) เป็น "MS" (ต้นเดือน)') },
+      { text: TR('วาดกราฟเส้นของ `passengers` ตาม `date`'), test: (c) => hasField(c, 'pb_plot_xy', { KIND: 'lineplot', X: 'date', Y: 'passengers' }) && c.chart((e) => e.block === 'pb_plot_xy' && e.chart === 'line'), hint: TR('ต่อบล็อกกราฟ x–y (lineplot) ไว้ใต้บล็อกสร้างคอลัมน์วันที่') },
+      CONNECTED,
+    ],
+    hints: [TR('"MS" (month start) คือวันที่ 1 ของทุกเดือน ข้อมูลนี้มี 1 แถวต่อ 1 เดือน'), TR('กราฟต้องอยู่หลังบล็อกที่สร้าง `date` เพราะใช้คอลัมน์นี้เป็นแกน x')],
+    learn: TR('`pd.date_range` สร้างวันที่ต่อเนื่องให้ทุกแถว กราฟตามเวลาบอกสองอย่าง: แนวโน้มขาขึ้นระยะยาว และรูปแบบที่ซ้ำทุกปี (ฤดูกาล) ซึ่งข้อถัด ๆ ไปจะแยกออกมาดูทีละส่วน'),
+  });
+  add({
+    id: 'ts_smooth', level: 4, title: TR('ค่าเฉลี่ยเคลื่อนที่และการปรับเรียบ'), topic: 'rolling · ewm · df.plot',
+    goal: TR('สร้างคอลัมน์ `ma12` = ค่าเฉลี่ยเคลื่อนที่ 12 เดือนของ `passengers` และคอลัมน์ `ewm` = ค่าปรับเรียบแบบเอกซ์โพเนนเชียล (alpha = 0.3) แล้ววาด `passengers`, `ma12` และ `ewm` บนกราฟเดียวกัน'),
+    start: () => ({ main: [note(TR('ผู้โดยสารรายเดือน พร้อมคอลัมน์วันที่')), ...flightsDates(), note(TR('ต่อ: ma12 → ewm → กราฟเส้นหลายคอลัมน์'))] }),
+    solution: () => ({ main: [note(TR('ผู้โดยสารรายเดือน พร้อมคอลัมน์วันที่')), ...flightsDates(), note(TR('ต่อ: ma12 → ewm → กราฟเส้นหลายคอลัมน์')),
+      B('pb_set_col', { DF: df, NAME: 'ma12' }, { VAL: B('pb_rolling', { DF: df, COL: 'passengers', N: 12, AGG: 'mean' }) }), B('pb_set_col', { DF: df, NAME: 'ewm' }, { VAL: B('pb_ewm', { DF: df, COL: 'passengers', A: 0.3 }) }),
+      B('pb_plot_lines', { DF: df, X: 'date', COLS: 'passengers, ma12, ewm', TITLE: TR('ข้อมูลจริงเทียบกับค่าที่ปรับเรียบ') })] }),
+    checks: [
+      { text: TR('`ma12` คือค่าเฉลี่ยเคลื่อนที่ 12 เดือน (11 แถวแรกว่าง แถวที่ 12 ≈ 126.67)'), test: (c) => { const d = c.v('df'); return isDF(d) && d.has('ma12') && sameVals(d.col('ma12').values, tsRef().ma12); }, hint: TR('บล็อก สร้าง/แทนคอลัมน์ ชื่อ ma12 ใส่ df["passengers"].rolling(12).mean() (หมวด อนุกรมเวลา & แนวโน้ม › แนวโน้ม & ฤดูกาล)') },
+      { text: TR('`ewm` ปรับเรียบด้วย alpha = 0.3'), test: (c) => { const d = c.v('df'); return isDF(d) && d.has('ewm') && sameVals(d.col('ewm').values, tsRef().ewm); }, hint: TR('บล็อก df["passengers"].ewm(alpha=0.3, adjust=False).mean() ใส่ในคอลัมน์ ewm') },
+      { text: TR('วาด `passengers`, `ma12` และ `ewm` บนกราฟเดียวกัน'), test: (c) => lines(c, 'pb_plot_lines', ['passengers', 'ma12', 'ewm']) && c.chart((e) => e.block === 'pb_plot_lines'), hint: TR('บล็อก กราฟเส้นหลายคอลัมน์: x = date และเลือก passengers, ma12, ewm') },
+    ],
+    hints: [TR('11 แถวแรกของ ma12 เป็นค่าว่าง เพราะยังมีข้อมูลไม่ครบ 12 เดือน'), TR('alpha = 0.3 แปลว่าค่าล่าสุดมีน้ำหนัก 30% ที่เหลือมาจากค่าปรับเรียบก่อนหน้า'), TR('สร้างคอลัมน์ทั้งสองให้เสร็จก่อนวาดกราฟ')],
+    learn: TR('ค่าเฉลี่ยเคลื่อนที่ 12 เดือนเฉลี่ยฤดูกาลทิ้งไปจึงเห็นแนวโน้มชัด แต่ตามข้อมูลช้ากว่าราวครึ่งปี ส่วน ewm ให้น้ำหนักค่าล่าสุดมากกว่าจึงตามทันเร็วกว่า แต่ยังเห็นฤดูกาลหลงเหลือ'),
+  });
+  add({
+    id: 'ts_trend', level: 4, title: TR('เส้นแนวโน้มด้วยการถดถอยเชิงเส้น'), topic: 'np.arange · LinearRegression · coef_', jigsaw: true,
+    goal: TR('หาเส้นแนวโน้มของผู้โดยสาร: สร้างลำดับเวลา `t` = 0, 1, 2, … ใช้ `X = df[["t"]]` ฝึก `LinearRegression` เก็บค่าที่ทายในคอลัมน์ `trend` แสดงความชัน `model.coef_` แล้ววาด `passengers` กับ `trend` บนกราฟเดียวกัน'),
+    start: () => ({ main: [note(TR('ผู้โดยสารรายเดือน: y = passengers')), ...flightsDates(), set('y', col('passengers')), note(TR('ต่อ: t → X → โมเดล → ฝึก → trend → ความชัน → กราฟ'))],
+      pieces: [pr2(TR('ผู้โดยสารเพิ่มขึ้นต่อเดือน:'), B('pb_attr', { M: V('model'), ATTR: 'coef_' })), set('X', cols(['t'])), B('pb_plot_lines', { DF: df, X: 'date', COLS: 'passengers, trend', TITLE: TR('ข้อมูลจริงกับเส้นแนวโน้ม') }), fit('model', 'X', 'y'),
+        B('pb_time_index', { DF: df, NAME: 't' }), B('pb_set_col', { DF: df, NAME: 'trend' }, { VAL: B('pb_predict', { M: V('model'), FN: 'predict', X: V('X') }) }), set('model', R.model('LinearRegression'))] }),
+    solution: () => ({ main: [note(TR('ผู้โดยสารรายเดือน: y = passengers')), ...flightsDates(), set('y', col('passengers')), note(TR('ต่อ: t → X → โมเดล → ฝึก → trend → ความชัน → กราฟ')), B('pb_time_index', { DF: df, NAME: 't' }), set('X', cols(['t'])), set('model', R.model('LinearRegression')), fit('model', 'X', 'y'),
+      B('pb_set_col', { DF: df, NAME: 'trend' }, { VAL: B('pb_predict', { M: V('model'), FN: 'predict', X: V('X') }) }), pr2(TR('ผู้โดยสารเพิ่มขึ้นต่อเดือน:'), B('pb_attr', { M: V('model'), ATTR: 'coef_' })),
+      B('pb_plot_lines', { DF: df, X: 'date', COLS: 'passengers, trend', TITLE: TR('ข้อมูลจริงกับเส้นแนวโน้ม') })] }),
+    checks: [
+      { text: TR('`t` เป็นลำดับเวลา 0, 1, 2, …, 143'), test: (c) => { const d = c.v('df'); return isDF(d) && d.has('t') && d.col('t').values.every((v, i) => v === i); }, hint: TR('บล็อก สร้างลำดับเวลา df["t"] = np.arange(len(df)) ต้องอยู่ก่อน X = df[["t"]]') },
+      { text: TR('`model` เป็น LinearRegression ที่ฝึกด้วย X ซึ่งมีคอลัมน์ t คอลัมน์เดียว'), test: (c) => est(c.v('model'), 'LinearRegression') && fitted(c.v('model')) && featNames(c.v('model')).join() === 't', hint: TR('ลำดับคือ สร้าง t → X = df[["t"]] → model = LinearRegression() → model.fit(X, y)') },
+      { text: TR('คอลัมน์ `trend` คือค่าที่โมเดลทาย (เส้นตรง)'), test: (c) => { const d = c.v('df'), r = tsRef(); return isDF(d) && d.has('trend') && d.col('trend').values.every((v, i) => near(v, r.icpt + r.slope * i, 1e-9)); }, hint: TR('df["trend"] = model.predict(X) ต้องอยู่หลัง model.fit(X, y)') },
+      { text: TR('แสดงความชัน (ประมาณ 2.66 พันคนต่อเดือน)'), test: (c) => c.printedVal((x) => isArr(x) && near(values(x)[0], tsRef().slope, 1e-9)), hint: TR('print("ผู้โดยสารเพิ่มขึ้นต่อเดือน:", model.coef_) หลังฝึกโมเดล') },
+      { text: TR('วาด `passengers` และ `trend` บนกราฟเดียวกัน'), test: (c) => lines(c, 'pb_plot_lines', ['passengers', 'trend']) && c.chart((e) => e.block === 'pb_plot_lines'), hint: TR('กราฟเส้นหลายคอลัมน์ต้องอยู่ท้ายสุด หลังสร้างคอลัมน์ trend') },
+      CONNECTED,
+    ],
+    hints: [TR('เส้นแนวโน้มคือโมเดลถดถอยเชิงเส้นที่มีฟีเจอร์เดียวคือเวลา: passengers ≈ จุดตัดแกน + ความชัน × t'), TR('X ต้องเป็นตาราง 2 มิติ จึงใช้ df[["t"]] (วงเล็บ 2 ชั้น)'), TR('ต้องฝึกโมเดลก่อนจึงจะ predict และอ่าน coef_ ได้')],
+    learn: TR('ความชัน 2.66 แปลว่าผู้โดยสารเพิ่มขึ้นเฉลี่ยราว 2,660 คนต่อเดือน (ข้อมูลมีหน่วยพันคน) เส้นตรงจับแนวโน้มได้ แต่มองไม่เห็นฤดูกาลที่ขึ้นลงทุกปี'),
+  });
+  add({
+    id: 'ts_decompose', level: 4, title: TR('แยกแนวโน้มและฤดูกาล'), topic: 'decompose · groupby · dt.month',
+    goal: TR('แยก `passengers` เป็นแนวโน้ม ฤดูกาล และส่วนที่เหลือด้วย `decompose(…, period=12, model="multiplicative")` เก็บใน `parts` วาดกราฟส่วนประกอบ แล้วหาค่าฤดูกาลเฉลี่ยของแต่ละเดือน: เพิ่มคอลัมน์ `month` = `df["date"].dt.month` ในตาราง `parts` แล้วแสดง `parts.groupby("month")["seasonal"].mean()`'),
+    start: () => ({ main: [note(TR('ผู้โดยสารรายเดือน พร้อมคอลัมน์วันที่')), ...flightsDates(), note(TR('ต่อ: parts = decompose(…) → กราฟ → parts["month"] → ค่าฤดูกาลเฉลี่ยของแต่ละเดือน'))] }),
+    solution: () => ({ main: [note(TR('ผู้โดยสารรายเดือน พร้อมคอลัมน์วันที่')), ...flightsDates(), note(TR('ต่อ: parts = decompose(…) → กราฟ → parts["month"] → ค่าฤดูกาลเฉลี่ยของแต่ละเดือน')),
+      set('parts', B('pb_decompose', { DF: df, COL: 'passengers', P: 12, M: 'multiplicative' })), B('pb_plot_decompose', { P: V('parts'), DF: df, DATE: 'date' }),
+      B('pb_set_col', { DF: V('parts'), NAME: 'month' }, { VAL: B('pb_col_func', { DF: df, COL: 'date', FN: 'month' }) }), pr(B('pb_groupby', { DF: V('parts'), BY: 'month', COL: 'seasonal', AGG: 'mean' }))] }),
+    checks: [
+      { text: TR('`parts` มีคอลัมน์ observed, trend, seasonal และ resid แบบ multiplicative (ค่าฤดูกาลเฉลี่ยเท่ากับ 1)'), test: (c) => { const p = c.v('parts'); return isDF(p) && ['observed', 'trend', 'seasonal', 'resid'].every((k) => p.has(k)) && near(mean(p.col('seasonal').values), 1, 1e-9) && sameVals(p.col('seasonal').values.slice(0, 12), tsRef().seasonal); }, hint: TR('บล็อก แยกแนวโน้มและฤดูกาล (หมวด อนุกรมเวลา & แนวโน้ม › แนวโน้ม & ฤดูกาล) เลือก period=12 และ model "multiplicative"') },
+      { text: TR('วาดกราฟส่วนประกอบทั้ง 4'), test: (c) => c.chart((e) => e.block === 'pb_plot_decompose'), hint: TR('บล็อก กราฟแยกแนวโน้มและฤดูกาล plot_decompose(parts, df["date"])') },
+      { text: TR('แสดงค่าฤดูกาลเฉลี่ยของเดือน 1–12 (สูงสุดเดือน 7 ≈ 1.23)'), test: (c) => c.printedVal((x) => isS(x) && x.length === 12 && x.index[x.values.indexOf(Math.max(...x.values))] === 7 && near(Math.max(...x.values), Math.max(...tsRef().seasonal), 1e-9)), hint: TR('สร้างคอลัมน์ month ในตาราง parts (เปลี่ยนตารางในบล็อกสร้างคอลัมน์เป็น parts แต่ยังอ่าน date จาก df) แล้ว print(parts.groupby("month")["seasonal"].mean())') },
+    ],
+    hints: [TR('multiplicative: ข้อมูล = แนวโน้ม × ฤดูกาล × ส่วนที่เหลือ ค่าฤดูกาล 1.23 คือสูงกว่าแนวโน้ม 23%'), TR('ตาราง parts มีแถวเท่ากับ df และเรียงเดือนเดียวกัน จึงใส่ df["date"].dt.month ลงใน parts ได้ตรงแถว'), TR('บล็อกจัดกลุ่มสรุป: จัดกลุ่มตาม month สรุปคอลัมน์ seasonal ด้วย mean')],
+    learn: TR('เดือนกรกฎาคมมีผู้โดยสารสูงกว่าแนวโน้มราว 23% ส่วนพฤศจิกายนต่ำกว่าราว 20% ใช้แบบ multiplicative เพราะฤดูกาลแกว่งกว้างขึ้นเมื่อแนวโน้มสูงขึ้น (ถ้าแกว่งกว้างเท่าเดิมทุกปีให้ใช้ additive)'),
+  });
+  add({
+    id: 'ts_baseline', level: 4, title: TR('แนวโน้ม + ฤดูกาล เทียบค่าพยากรณ์แบบง่าย'), topic: 'shuffle=False · seasonal_naive · MAE',
+    goal: TR('X (ลำดับเวลา t และเดือนแบบ 0/1) และการแบ่งข้อมูลตามเวลาเตรียมไว้แล้ว ให้ฝึก `LinearRegression` ทาย `y_pred` ของชุดทดสอบ สร้างค่าพยากรณ์แบบง่าย `y_naive = seasonal_naive(y_train, len(y_test), season=12)` แล้วแสดง MAE ของทั้งสองแบบ โมเดลต้องคลาดเคลื่อนน้อยกว่า'),
+    start: () => ({ main: [note(TR('X = ลำดับเวลา t + เดือนแบบ 0/1, y = ผู้โดยสาร')), ...flightsDates(), ...seasonCols(), split(0.2, 'time'), note(TR('ต่อ: โมเดล → ฝึก → ทาย → ค่าพยากรณ์แบบง่าย → MAE ทั้งสองแบบ'))] }),
+    solution: () => ({ main: [note(TR('X = ลำดับเวลา t + เดือนแบบ 0/1, y = ผู้โดยสาร')), ...flightsDates(), ...seasonCols(), split(0.2, 'time'), note(TR('ต่อ: โมเดล → ฝึก → ทาย → ค่าพยากรณ์แบบง่าย → MAE ทั้งสองแบบ')),
+      set('model', R.model('LinearRegression')), fit(), predict(), set('y_naive', B('pb_naive', { Y: V('y_train'), S: 12 }, { N: B('pb_len', {}, { X: get('y_test') }) })),
+      metric(TR('MAE ของโมเดล:'), 'mean_absolute_error'), pr2(TR('MAE ของค่าพยากรณ์แบบง่าย:'), B('pb_metric', { FN: 'mean_absolute_error', YT: V('y_test'), YP: V('y_naive') }))] }),
+    checks: [
+      { text: TR('`model` เป็น LinearRegression ที่ฝึกด้วย X_train (t และ month_2 … month_12)'), test: (c) => est(c.v('model'), 'LinearRegression') && fitted(c.v('model')) && featNames(c.v('model')).join() === MONTH_DUMMIES.join(), hint: TR('model = LinearRegression() แล้ว model.fit(X_train, y_train)') },
+      { text: TR('`y_pred` ทายชุดทดสอบครบ 29 เดือน'), test: (c) => { const p = values(c.v('y_pred')); return !!p && p.length === 29; }, hint: TR('y_pred = model.predict(X_test) หลังฝึกโมเดล') },
+      { text: TR('`y_naive` คือ 12 เดือนสุดท้ายของชุดฝึกซ้ำกัน 29 ค่า'), test: (c) => sameVals(values(c.v('y_naive')), tsRef().naive), hint: TR('บล็อก ค่าพยากรณ์แบบง่าย (หมวด อนุกรมเวลา & แนวโน้ม › พยากรณ์ & วัดผล) ใช้ y_train, len(y_test) และ season=12') },
+      { text: TR('แสดง MAE ของโมเดล (ประมาณ 34)'), test: (c) => { const yp = c.v('y_pred'), yt = c.v('y_test'); return !!values(yp) && c.printedNum((x) => near(x, PB.metrics.mean_absolute_error(yt, yp), 1e-9)); }, hint: TR('print("MAE ของโมเดล:", mean_absolute_error(y_test, y_pred))') },
+      { text: TR('แสดง MAE ของค่าพยากรณ์แบบง่าย (ประมาณ 65) ซึ่งมากกว่าของโมเดล'), test: (c) => { const yt = c.v('y_test'), yn = c.v('y_naive'), yp = c.v('y_pred'); if (!values(yn) || !values(yp)) return false; const a = PB.metrics.mean_absolute_error(yt, yn), b = PB.metrics.mean_absolute_error(yt, yp); return a > b && c.printedNum((x) => near(x, a, 1e-9)); }, hint: TR('บล็อกวัดผล mean_absolute_error เปลี่ยนค่าทำนายเป็น y_naive') },
+    ],
+    hints: [TR('ค่าพยากรณ์แบบง่าย (seasonal naive) ทายว่าแต่ละเดือนจะเท่ากับเดือนเดียวกันของปีล่าสุดในชุดฝึก'), TR('การแบ่งข้อมูลเรียงตามเวลา (shuffle=False): ชุดทดสอบคือ 29 เดือนสุดท้าย ไม่สุ่มสลับ'), TR('MAE ยิ่งน้อยยิ่งดี หน่วยเดียวกับข้อมูล (พันคน)')],
+    learn: TR('โมเดลที่ดีต้องชนะค่าพยากรณ์แบบง่ายก่อน: โมเดลแนวโน้ม + ฤดูกาลคลาดเคลื่อนราว 34 พันคน ส่วนค่าพยากรณ์แบบง่ายราว 65 พันคน เพราะโมเดลรู้ว่าผู้โดยสารเพิ่มขึ้นทุกปี · อนุกรมเวลาต้องแบ่งตามเวลา ไม่เช่นนั้นจะใช้อนาคตไปทายอดีต'),
+  });
+  add({
+    id: 'ts_future', level: 4, title: TR('พยากรณ์ 12 เดือนข้างหน้า'), topic: 'make_future · get_dummies · reindex',
+    goal: TR('โมเดลแนวโน้ม + ฤดูกาลฝึกด้วยข้อมูลทั้งหมดแล้ว ให้สร้างตาราง `future` ของ 12 เดือนถัดไปด้วย `make_future` ทำ `X_future` ให้มีคอลัมน์ชุดเดียวกับ X (เลือก t, month → get_dummies → reindex) ทาย `forecast` แล้วแสดงผลและวาดกราฟพยากรณ์'),
+    start: () => ({ main: [note(TR('โมเดลแนวโน้ม + ฤดูกาล ฝึกด้วยข้อมูล 144 เดือน')), ...flightsDates(), ...seasonCols(), set('model', R.model('LinearRegression')), fit('model', 'X', 'y'), note(TR('ต่อ: future → X_future (3 ขั้น) → forecast → แสดงผล → กราฟพยากรณ์'))] }),
+    solution: () => ({ main: [note(TR('โมเดลแนวโน้ม + ฤดูกาล ฝึกด้วยข้อมูล 144 เดือน')), ...flightsDates(), ...seasonCols(), set('model', R.model('LinearRegression')), fit('model', 'X', 'y'), note(TR('ต่อ: future → X_future (3 ขั้น) → forecast → แสดงผล → กราฟพยากรณ์')),
+      set('future', B('pb_future', { DF: df, DATE: 'date', S: 12, FREQ: 'MS', SEASON: 'month' })), set('X_future', cols(['t', 'month'], 'future')), set('X_future', B('pb_get_dummies', { DF: V('X_future'), COLS: 'month', DROP: 'True' })),
+      set('X_future', B('pb_align_cols', { DF: V('X_future'), REF: V('X') })), set('forecast', B('pb_predict', { M: V('model'), FN: 'predict', X: V('X_future') })),
+      pr2(TR('ค่าพยากรณ์ปี 1961:'), get('forecast')), B('pb_plot_forecast', { DF: df, DATE: 'date', DF2: df, COL: 'passengers', FC: V('forecast') })] }),
+    checks: [
+      { text: TR('`future` มี 12 เดือนของปี 1961 และ t = 144 … 155'), test: (c) => { const f = c.v('future'); if (!isDF(f) || f.nrows !== 12 || !f.has('date') || !f.has('t')) return false; const d = f.col('date').values; return d[0] === Date.UTC(1961, 0, 1) && d[11] === Date.UTC(1961, 11, 1) && f.col('t').values.every((v, i) => v === 144 + i); }, hint: TR('บล็อก ตารางช่วงเวลาถัดไป make_future(df, "date", steps=12, freq="MS", season="month")') },
+      { text: TR('`X_future` มีคอลัมน์ชุดเดียวกับ X เรียงลำดับเดียวกัน'), test: (c) => { const xf = c.v('X_future'), x = c.v('X'); return isDF(xf) && isDF(x) && xf.nrows === 12 && xf.columns.join() === x.columns.join(); }, hint: 'X_future = future[["t", "month"]] → pd.get_dummies(…, columns=["month"], drop_first=True) → X_future.reindex(columns=X.columns, fill_value=0)' },
+      { text: TR('`forecast` คือค่าที่โมเดลทายของ 12 เดือน'), test: (c) => { const f = values(c.v('forecast')), m = c.v('model'), xf = c.v('X_future'); if (!f || f.length !== 12 || !fitted(m) || !isDF(xf)) return false; const p = values(PB.runMaybe(m.predict(xf))); return sameVals(f, p); }, hint: 'forecast = model.predict(X_future)' },
+      { text: TR('แสดง `forecast`'), test: (c) => c.printedVal((x) => isArr(x) && values(x).length === 12), hint: TR('print("ค่าพยากรณ์ปี 1961:", forecast)') },
+      { text: TR('วาดกราฟพยากรณ์ต่อจากข้อมูลจริง'), test: (c) => c.chart((e) => e.block === 'pb_plot_forecast'), hint: TR('บล็อก กราฟพยากรณ์ plot_forecast(df["date"], df["passengers"], forecast)') },
+    ],
+    hints: [TR('ข้อมูลอนาคตต้องผ่านขั้นตอนเดียวกับตอนฝึก: เลือกคอลัมน์ t, month แล้วแปลงเดือนเป็น 0/1 แบบ drop_first เหมือนเดิม'), TR('reindex(columns=X.columns, fill_value=0) ทำให้คอลัมน์ตรงกับ X ทั้งชื่อและลำดับ ถ้าขาดเดือนไหนจะเติม 0 ให้'), TR('t ของอนาคตนับต่อจากข้อมูลเดิม: 144, 145, …')],
+    learn: TR('โมเดลรับข้อมูลใหม่ได้เมื่อคอลัมน์ตรงกับตอนฝึกทุกคอลัมน์ การทำขั้นตอนเดิมซ้ำแล้ว reindex ป้องกันคอลัมน์ขาดหรือสลับลำดับ ค่าพยากรณ์ปี 1961 จึงมีทั้งแนวโน้มขาขึ้นและฤดูกาลที่สูงสุดช่วงกรกฎาคม–สิงหาคม'),
+  });
+  add({
+    id: 'ts_cv', level: 4, title: TR('Cross-validation ตามลำดับเวลา'), topic: 'TimeSeriesSplit · cross_val_score',
+    goal: TR('วัดโมเดลแนวโน้ม + ฤดูกาลให้น่าเชื่อถือขึ้นด้วย `cross_val_score(model, X, y, cv=TimeSeriesSplit(n_splits=5), scoring="neg_mean_absolute_error")` เก็บใน `scores` แล้วแสดงคะแนนแต่ละรอบและค่าเฉลี่ย'),
+    start: () => ({ main: [note(TR('X = ลำดับเวลา t + เดือนแบบ 0/1, y = ผู้โดยสาร')), ...flightsDates(), ...seasonCols(), set('model', R.model('LinearRegression')), note(TR('ต่อ: scores = cross_val_score(… TimeSeriesSplit …) → แสดงผล'))] }),
+    solution: () => ({ main: [note(TR('X = ลำดับเวลา t + เดือนแบบ 0/1, y = ผู้โดยสาร')), ...flightsDates(), ...seasonCols(), set('model', R.model('LinearRegression')), note(TR('ต่อ: scores = cross_val_score(… TimeSeriesSplit …) → แสดงผล')),
+      set('scores', B('pb_cv_ts', { X: V('X'), Y: V('y'), K: 5, SC: 'neg_mean_absolute_error' }, { M: get('model') })), pr2(TR('คะแนนแต่ละรอบ (−MAE):'), get('scores')), pr2(TR('ค่าเฉลี่ย:'), B('pb_arr_stat', { FN: 'mean' }, { X: get('scores') }))] }),
+    checks: [
+      { text: TR('`scores` มี 5 ค่าจาก TimeSeriesSplit'), test: (c) => c.has('pb_cv_ts') && isArr(c.v('scores')) && values(c.v('scores')).length === 5, hint: TR('บล็อก ตรวจไขว้ตามเวลา (หมวด อนุกรมเวลา & แนวโน้ม › พยากรณ์ & วัดผล) ใส่ model ในช่องแรก') },
+      { text: TR('ใช้ scoring "neg_mean_absolute_error" (คะแนนติดลบทุกค่า)'), test: (c) => hasField(c, 'pb_cv_ts', { SC: 'neg_mean_absolute_error' }) && isArr(c.v('scores')) && values(c.v('scores')).every((v) => v < 0), hint: TR('ในบล็อก เลือก scoring เป็น "neg_mean_absolute_error"') },
+      { text: TR('แสดงคะแนนแต่ละรอบ'), test: (c) => c.printedVal((x) => isArr(x) && values(x).length === 5), hint: TR('print("คะแนนแต่ละรอบ (−MAE):", scores)') },
+      { text: TR('แสดงค่าเฉลี่ยของ `scores` (ประมาณ −25.7)'), test: (c) => isArr(c.v('scores')) && c.printedNum((x) => near(x, PB.npMean(values(c.v('scores'))))), hint: TR('หมวด วัดผล › บล็อก (…).mean() ใส่ scores') },
+    ],
+    hints: [TR('TimeSeriesSplit แบ่ง 144 เดือนเป็น 6 ช่วง ช่วงละ 24 เดือน: รอบแรกฝึกด้วย 24 เดือนแรกแล้วทดสอบกับ 24 เดือนถัดไป รอบถัดไปฝึกยาวขึ้นอีก 24 เดือน'), TR('ไม่ต้อง fit เอง cross_val_score ฝึกโมเดลให้ในแต่ละรอบ'), TR('คะแนนติดลบเพราะ scikit-learn ถือว่าคะแนนยิ่งมากยิ่งดี: −25.7 คือคลาดเคลื่อนเฉลี่ย 25.7 พันคน')],
+    learn: TR('TimeSeriesSplit ฝึกด้วยอดีตแล้วทดสอบกับช่วงถัดไปเสมอ จึงไม่ใช้อนาคตไปทายอดีต และได้คะแนนจากหลายช่วงเวลา รอบหลัง ๆ คลาดเคลื่อนมากขึ้นเพราะผู้โดยสารและการแกว่งตามฤดูกาลสูงขึ้น ค่าเฉลี่ยจึงบอกภาพรวมได้ดีกว่าการวัดครั้งเดียว'),
+  });
   EX.forEach((e, i) => { e.n = i + 1; });
   PB.EXERCISES = EX;
 
@@ -421,7 +554,7 @@
 
   /* ---------------- state ---------------- */
   const KEY_DONE = 'pyblocks.ex.done.v1', KEY_WORK = 'pyblocks.ex.work.v1', KEY_ACTIVE = 'pyblocks.ex.active';
-  const LEVELS = { 1: [TR('ระดับ 1'), TR('พื้นฐาน Python และ pandas')], 2: [TR('ระดับ 2'), TR('ขั้นตอน Machine Learning')], 3: [TR('ระดับ 3'), TR('วัดผลขั้นสูงและข้อความภาษาไทย')] };
+  const LEVELS = { 1: [TR('ระดับ 1'), TR('พื้นฐาน Python และ pandas')], 2: [TR('ระดับ 2'), TR('ขั้นตอน Machine Learning')], 3: [TR('ระดับ 3'), TR('วัดผลขั้นสูงและข้อความภาษาไทย')], 4: [TR('ระดับ 4'), TR('อนุกรมเวลาและการพยากรณ์แนวโน้ม')] };
   const S = (A.ex = { active: null, results: null, hints: 0, prev: null, runError: null, usedSolution: false, checking: false });
   const doneMap = () => U.store.get(KEY_DONE) || {};
   const workMap = () => U.store.get(KEY_WORK) || {};
@@ -625,7 +758,7 @@
     const body = h('div', { class: 'ex-list' });
     body.appendChild(h('div', { class: 'ex-progress' }, h('div', { class: 'ex-progress-text' }, h('b', {}, TR`ทำผ่านแล้ว ${nDone} จาก ${EX.length} ข้อ`), h('span', { class: 'muted' }, TR('ต่อบล็อกตามโจทย์ กด "ตรวจคำตอบ" แล้วแอปจะรันโปรแกรมและตรวจให้ทันที'))),
       h('div', { class: 'ex-progress-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(EX.length), 'aria-valuenow': String(nDone) }, h('i', { style: { width: (nDone / EX.length * 100).toFixed(1) + '%' } }))));
-    for (const lv of [1, 2, 3]) {
+    for (const lv of [1, 2, 3, 4]) {
       const items = EX.filter((e) => e.level === lv);
       const grid = h('div', { class: 'ex-grid' }, items.map((e) => {
         const st = d[e.id], cur = S.active === e.id, w = workMap()[e.id];

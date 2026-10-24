@@ -38,6 +38,8 @@ CASES = [
     ('sales_monthly.csv', 'timeseries', 'forecast', ['LinearRegression']),
     ('sales_monthly.csv', 'timeseries', 'forecast', ['RandomForestRegressor']),
     ('sales_monthly.csv', 'timeseries', 'trend', []),
+    ('sales_monthly.csv', 'timeseries', 'trend_forecast', ['LinearRegression']),
+    ('sales_monthly.csv', 'timeseries', 'trend_forecast', ['GradientBoostingRegressor']),
     ('digits_small.csv', 'image', 'image_classification', ['SVC']),
     ('digits_small.csv', 'image', 'image_classification', ['KNeighborsClassifier', 'LogisticRegression']),
     ('digits_small.csv', 'image', 'image_pca', ['PCA']),

@@ -72,6 +72,9 @@ def main(only=None):
               m.getInputTargetBlock('VALUE').getInput('P_N_NEIGHBORS').connection.connect(T.find((b) => b.type === 'variables_get').outputConnection);
               f.getInput('DO').connection.connect(m.previousConnection); m.nextConnection.connect(fit.previousConnection); fit.nextConnection.connect(ap.previousConnection);
               return [f, T.find((b) => b.type === 'pb_plot_list')]; },
+            ts_dates(ws, T) { const d = T.find((b) => b.type === 'pb_date_range'); d.setFieldValue('MS', 'FREQ'); return [d, T.find((b) => b.type === 'pb_plot_xy')]; },
+            ts_trend(ws, T) { const by = (t, f) => T.find((b) => b.type === t && (!f || f(b))), vs = (n) => by('variables_set', (b) => b.getField('VAR').getText() === n);
+              return [by('pb_time_index'), vs('X'), vs('model'), by('pb_fit'), by('pb_set_col'), by('pb_print2'), by('pb_plot_lines')]; },
           };
           window.__assemble = (id) => {
             const ws = PB.ui.ws, tops = ws.getTopBlocks(true), main = tops[0], T = tops.slice(1);

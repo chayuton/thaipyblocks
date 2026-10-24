@@ -91,6 +91,8 @@ pre.py { margin: 0; padding: 12px 18px 16px; background: var(--code-bg); font: 1
     if (blocks.some((b) => b.type === 'pb_split')) evals.push(TR('แบ่งข้อมูลฝึก/ทดสอบ'));
     if (blocks.some((b) => b.type === 'pb_cv' || b.type === 'pb_compare_cv')) evals.push('cross-validation');
     if (blocks.some((b) => b.type === 'pb_grid')) evals.push('GridSearchCV');
+    if (blocks.some((b) => b.type === 'pb_cv_ts')) evals.push('TimeSeriesSplit');
+    if (blocks.some((b) => b.type === 'pb_naive')) evals.push(TR('เทียบกับค่าพยากรณ์แบบง่าย'));
     const thai = blocks.some((b) => /^pb_th_|pb_word_count/.test(b.type) || (b.type === 'pb_vectorizer' && /^thai/.test(b.getFieldValue('AN'))));
     const rows = [];
     if (data.length) rows.push([TR('ข้อมูล'), data.join(', ')]);

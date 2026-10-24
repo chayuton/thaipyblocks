@@ -11,7 +11,7 @@
     for (const [k, c] of Object.entries(STD)) add(k, c);
     const categoryStyles = {};
     for (const [k, c] of Object.entries(BK.CATS)) categoryStyles['c_' + k] = { colour: c.colour };
-    Object.assign(categoryStyles, { c_logic: { colour: STD.logic_blocks }, c_loop: { colour: STD.loop_blocks }, c_math: { colour: STD.math_blocks }, c_text: { colour: STD.text_blocks }, c_list: { colour: STD.list_blocks }, c_var: { colour: STD.variable_blocks }, c_proc: { colour: STD.procedure_blocks }, c_models: { colour: '#5a4cc0' } });
+    Object.assign(categoryStyles, { c_logic: { colour: STD.logic_blocks }, c_loop: { colour: STD.loop_blocks }, c_math: { colour: STD.math_blocks }, c_text: { colour: STD.text_blocks }, c_list: { colour: STD.list_blocks }, c_var: { colour: STD.variable_blocks }, c_proc: { colour: STD.procedure_blocks }, c_models: { colour: '#5a4cc0' }, c_ts: { colour: '#0b6e99' } });
     return { blockStyles, categoryStyles };
   }
   PB.makeThemes = () => {
@@ -33,6 +33,7 @@
   const setTo = (name, type, fields, inputs) => ({ kind: 'block', type: 'variables_set', fields: { VAR: V(name) }, inputs: { VALUE: { block: R.b(type, fields || {}, inputs || {}) } } });
   const printOf = (type, fields, inputs) => ({ kind: 'block', type: 'text_print', inputs: { TEXT: { block: R.b(type, fields || {}, inputs || {}) } } });
   const label = (text) => ({ kind: 'label', text });
+  const setCol = (name, type, fields, inputs) => ({ kind: 'block', type: 'pb_set_col', fields: { DF: V('df'), NAME: name }, inputs: { VAL: { block: R.b(type, fields || {}, inputs || {}) } } });
   const num = (n) => ({ shadow: { type: 'math_number', fields: { NUM: n } } });
   const txt = (t) => ({ shadow: { type: 'text', fields: { TEXT: t } } });
   const modelSet = (M) => ({ kind: 'block', type: 'variables_set', fields: { VAR: V(M.cls === 'PCA' ? 'pca' : 'model') }, inputs: { VALUE: { block: Object.assign(R.b(M.type), { inputs: BK.modelShadows(M.cls) }) } } });
@@ -53,7 +54,7 @@
         ] },
         { kind: 'category', name: TR('คำนวณคอลัมน์'), categorystyle: 'c_data', contents: [
           blk('pb_set_col', { DF: V('df'), NAME: 'new_col' }), blk('pb_col_math', { DF: V('df') }, { VAL: num(2) }), blk('pb_col_func', { DF: V('df') }), blk('pb_np_func', { DF: V('df') }), blk('pb_rolling', { DF: V('df') }), blk('pb_to_datetime', { DF: V('df') }),
-          label(TR('อนุกรมเวลา')), blk('pb_date_range', { DF: V('df') }), blk('pb_lags', { DF: V('df') }),
+          label(TR('อนุกรมเวลา')), blk('pb_date_range', { DF: V('df') }), blk('pb_time_index', { DF: V('df'), NAME: 't' }), blk('pb_shift', { DF: V('df') }), blk('pb_ewm', { DF: V('df') }), blk('pb_lags', { DF: V('df') }),
         ] },
         { kind: 'category', name: TR('ข้อความภาษาไทย'), categorystyle: 'c_other', contents: [
           label(TR('ตัดคำภาษาไทยด้วย PyThaiNLP')),
@@ -108,6 +109,37 @@
           label(TR('บันทึกข้อมูลที่สะอาดแล้ว')), blk('pb_to_csv', { DF: V('df'), NAME: 'clean_data.csv' }),
         ] },
       ] },
+      /* version 3.10: time series and trend forecasting, in the order of the work: dates → trend & season → forecast → charts */
+      { kind: 'category', name: TR('อนุกรมเวลา & แนวโน้ม'), categorystyle: 'c_ts', contents: [
+        { kind: 'category', name: TR('วันที่ & ลำดับเวลา'), categorystyle: 'c_ts', contents: [
+          label(TR('คอลัมน์วันที่')), blk('pb_date_range', { DF: V('df') }), setCol('date', 'pb_to_datetime', { DF: V('df') }),
+          label(TR('ลำดับเวลา t และส่วนของวันที่ (ใช้เป็นฟีเจอร์ของโมเดล)')), blk('pb_time_index', { DF: V('df'), NAME: 't' }),
+          setCol('month', 'pb_col_func', { DF: V('df'), COL: 'date', FN: 'month' }), setCol('year', 'pb_col_func', { DF: V('df'), COL: 'date', FN: 'year' }),
+          label(TR('เทียบกับช่วงก่อนหน้า')), setCol('last_year', 'pb_shift', { DF: V('df'), FN: 'shift', N: 12 }), setCol('growth', 'pb_shift', { DF: V('df'), FN: 'pct_change', N: 12 }), blk('pb_lags', { DF: V('df') }),
+        ] },
+        { kind: 'category', name: TR('แนวโน้ม & ฤดูกาล'), categorystyle: 'c_ts', contents: [
+          label(TR('ปรับเรียบ: ค่าเฉลี่ยเคลื่อนที่ · ค่าเฉลี่ยแบบเอกซ์โพเนนเชียล')), setCol('ma12', 'pb_rolling', { DF: V('df'), N: 12, AGG: 'mean' }), setCol('ewm', 'pb_ewm', { DF: V('df'), A: 0.3 }),
+          label(TR('เส้นแนวโน้ม: LinearRegression ทาย y จากลำดับเวลา t')), setTo('X', 'pb_cols', { DF: V('df'), COLS: 't' }), setTo('model', 'pb_m_LinearRegression'),
+          blk('pb_fit', { M: V('model'), X: V('X'), Y: V('y') }), setCol('trend', 'pb_predict', { M: V('model'), FN: 'predict', X: V('X') }),
+          { kind: 'block', type: 'pb_print2', fields: { LABEL: TR('แนวโน้มต่อช่วงเวลา:') }, inputs: { VAL: { block: R.b('pb_attr', { M: V('model'), ATTR: 'coef_' }) } } },
+          label(TR('แยกส่วนประกอบ: แนวโน้ม + ฤดูกาล + ส่วนที่เหลือ')), setTo('parts', 'pb_decompose', { DF: V('df'), P: 12, M: 'multiplicative' }), blk('pb_plot_decompose', { P: V('parts'), DF: V('df'), DATE: 'date' }),
+          printOf('pb_df_view', { DF: V('parts'), FN: 'head', N: 12 }),
+        ] },
+        { kind: 'category', name: TR('พยากรณ์ & วัดผล'), categorystyle: 'c_ts', contents: [
+          label(TR('แบ่งข้อมูลตามเวลา (ไม่สุ่มสลับ)')), blk('pb_split', { MODE: 'time' }),
+          label(TR('เกณฑ์ขั้นต่ำ: ค่าพยากรณ์แบบง่าย (โมเดลต้องคลาดเคลื่อนน้อยกว่า)')), setTo('y_naive', 'pb_naive', { Y: V('y_train'), S: 12 }, { N: R.b('pb_len', {}, { X: R.get('y_test') }) }),
+          { kind: 'block', type: 'pb_print2', fields: { LABEL: 'MAE:' }, inputs: { VAL: { block: R.b('pb_metric', { FN: 'mean_absolute_error' }) } } },
+          { kind: 'block', type: 'pb_print2', fields: { LABEL: 'MAPE:' }, inputs: { VAL: { block: R.b('pb_metric', { FN: 'mape' }) } } },
+          label(TR('ตรวจไขว้ตามลำดับเวลา (TimeSeriesSplit)')), { kind: 'block', type: 'variables_set', fields: { VAR: V('scores') }, inputs: { VALUE: { block: R.b('pb_cv_ts', { SC: 'neg_mean_absolute_error' }, { M: R.get('model') }) } } },
+          label(TR('ทายช่วงเวลาถัดไป: ตารางอนาคต → คอลัมน์ชุดเดียวกับ X → predict')),
+          setTo('future', 'pb_future', { DF: V('df'), DATE: 'date', S: 12, FREQ: 'MS', SEASON: 'month' }), setTo('X_future', 'pb_get_dummies', { DF: V('X_future'), COLS: 'month', DROP: 'True' }),
+          setTo('X_future', 'pb_align_cols'), setTo('forecast', 'pb_predict', { M: V('model'), FN: 'predict', X: V('X_future') }),
+          label(TR('หรือพยากรณ์ทีละช่วงด้วยค่าย้อนหลัง (lag)')), setTo('forecast', 'pb_forecast', { DF: V('df') }),
+        ] },
+        { kind: 'category', name: TR('กราฟอนุกรมเวลา'), categorystyle: 'c_ts', contents: [
+          blk('pb_plot_xy', { DF: V('df'), KIND: 'lineplot', X: 'date' }), blk('pb_plot_lines', { DF: V('df'), X: 'date' }), blk('pb_plot_decompose', { P: V('parts'), DF: V('df'), DATE: 'date' }), blk('pb_plot_forecast', { DF: V('df'), DATE: 'date', DF2: V('df') }),
+        ] },
+      ] },
       { kind: 'category', name: TR('เตรียมข้อมูล'), categorystyle: 'c_prep', contents: [
         label(TR('แยกฟีเจอร์ X และเป้าหมาย y')),
         setTo('X', 'pb_drop_cols', { DF: V('df') }), setTo('y', 'pb_col', { DF: V('df') }),
@@ -119,6 +151,7 @@
         printOf('pb_selectk_scores', { M: V('selector') }), blk('pb_plot_importance', { M: V('selector'), ATTR: 'scores_', X: V('X') }),
         label(TR('ต่อขั้นตอนเป็นไปป์ไลน์')),
         blk('pb_pipeline', {}, { A: { block: R.b('pb_scaler') } }), blk('pb_pipeline', {}, { A: { block: R.b('pb_selectk', { FN: 'f_classif', K: 3 }) } }), blk('pb_to_frame'),
+        label(TR('ข้อมูลใหม่ต้องมีคอลัมน์ชุดเดียวกับตอนฝึก')), setTo('X_future', 'pb_align_cols'),
       ] },
       { kind: 'category', name: TR('โมเดล'), categorystyle: 'c_models', contents: [
         { kind: 'category', name: TR('จำแนกประเภท'), categorystyle: 'c_cls', contents: [label(TR('Classification — ทายกลุ่ม/คลาส')), ...models('cls')] },
@@ -131,6 +164,7 @@
         label(TR('วัดผลแบบไขว้ (cross-validation)')),
         { kind: 'block', type: 'variables_set', fields: { VAR: V('scores') }, inputs: { VALUE: { block: R.b('pb_cv', {}, { M: R.get('model') }) } } },
         { kind: 'block', type: 'pb_print2', fields: { LABEL: TR('คะแนนเฉลี่ย:') }, inputs: { VAL: { block: R.b('pb_arr_stat', { FN: 'mean' }, { X: R.get('scores') }) } } },
+        { kind: 'block', type: 'variables_set', fields: { VAR: V('scores') }, inputs: { VALUE: { block: R.b('pb_cv_ts', { SC: 'neg_mean_absolute_error' }, { M: R.get('model') }) } } },
         label(TR('หาค่าพารามิเตอร์ที่ดีที่สุด (GridSearchCV)')),
         { kind: 'block', type: 'variables_set', fields: { VAR: V('grid') }, inputs: { VALUE: { block: R.b('pb_grid', {}, { M: R.get('model') }) } } },
         blk('pb_fit', { M: V('grid'), X: V('X_train'), Y: V('y_train') }),
@@ -140,7 +174,7 @@
         { kind: 'block', type: 'pb_compare', inputs: { MODELS: { block: R.list([Object.assign(R.b('pb_m_LogisticRegression'), { inputs: BK.modelShadows('LogisticRegression') }), Object.assign(R.b('pb_m_RandomForestClassifier'), { inputs: BK.modelShadows('RandomForestClassifier') })]) } } },
         { kind: 'block', type: 'pb_compare_cv', inputs: { MODELS: { block: R.list([Object.assign(R.b('pb_m_LogisticRegression'), { inputs: BK.modelShadows('LogisticRegression') }), Object.assign(R.b('pb_m_KNeighborsClassifier'), { inputs: BK.modelShadows('KNeighborsClassifier') })]) } } },
         label(TR('ใช้งานโมเดล')),
-        blk('pb_predict_row'), blk('pb_predict_text'), setTo('forecast', 'pb_forecast', { DF: V('df') }),
+        blk('pb_predict_row'), blk('pb_predict_text'), setTo('forecast', 'pb_forecast', { DF: V('df') }), setTo('y_naive', 'pb_naive', { Y: V('y_train'), S: 12 }, { N: R.b('pb_len', {}, { X: R.get('y_test') }) }),
       ] },
       { kind: 'category', name: TR('วัดผล'), categorystyle: 'c_metric', contents: [
         { kind: 'block', type: 'pb_print2', fields: { LABEL: 'Accuracy:' }, inputs: { VAL: { block: R.b('pb_metric', { FN: 'accuracy_score' }) } } },
@@ -149,7 +183,7 @@
       ] },
       { kind: 'category', name: TR('กราฟ'), categorystyle: 'c_viz', contents: [
         blk('pb_plot_xy', { DF: V('df'), KIND: 'scatterplot' }), blk('pb_plot_dist', { DF: V('df') }), blk('pb_plot_heat', {}, { M: { block: R.b('pb_df_info', { DF: V('df'), FN: 'corr' }) } }),
-        blk('pb_plot_cm'), blk('pb_plot_pred'), blk('pb_plot_importance'), blk('pb_plot_forecast'), blk('pb_plot_list'), blk('pb_plot_images', { DF: V('df') }),
+        blk('pb_plot_cm'), blk('pb_plot_pred'), blk('pb_plot_importance'), blk('pb_plot_lines', { DF: V('df') }), blk('pb_plot_decompose', { P: V('parts'), DF: V('df') }), blk('pb_plot_forecast'), blk('pb_plot_list'), blk('pb_plot_images', { DF: V('df') }),
       ] },
       { kind: 'sep' },
       { kind: 'category', name: 'Python', categorystyle: 'c_pybasic', contents: [

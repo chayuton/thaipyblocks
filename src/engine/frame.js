@@ -300,7 +300,7 @@
     shift(n = 1) { const L = this.length; return this._new(PB.range(L).map((i) => (i - n >= 0 && i - n < L ? this.values[i - n] : NaN)), { dtype: 'float64' }); }
     diff(n = 1) { const v = this._num('diff'); return this._new(v.map((x, i) => (i - n >= 0 ? x - v[i - n] : NaN)), { dtype: 'float64' }); }
     pct_change(n = 1) { const v = this._num('pct_change'); return this._new(v.map((x, i) => (i - n >= 0 ? x / v[i - n] - 1 : NaN)), { dtype: 'float64' }); }
-    rolling(w) { return new Rolling(this, w); }
+    rolling(w, opts) { return new Rolling(this, w, opts); }
     log1p() { return this._new(this._num('log1p').map((v) => Math.log1p(v)), { dtype: 'float64' }); }
     map(dict) { return this._new(this.values.map((v) => (dict.has(PB.keyOf(v)) ? dict.get(PB.keyOf(v)) : NaN))); }
     tolist() { return this.values.slice(); }
@@ -408,14 +408,62 @@
     for (let i = 0; i < a.length; i++) if (!isMissing(a[i]) && !isMissing(b[i])) { const x = a[i] - ma, y = b[i] - mb; sab += x * y; saa += x * x; sbb += y * y; }
     return sab / Math.sqrt(saa * sbb);
   }
+  /* series.rolling(w, center=False, min_periods=w): windows like pandas' FixedWindowIndexer (center=True puts the
+     window around the row: rows i-(w-1-o) … i+o with o = (w-1)//2), mean and sum as pandas' roll_mean / roll_sum
+     compute them (a running Kahan-compensated sum that adds the new value and removes the old one), so the
+     last digits match pandas too (version 3.10) */
   class Rolling {
-    constructor(s, w) { this.s = s; this.w = w; }
-    _agg(fn) {
-      const v = this.s._num('rolling'), w = this.w;
-      return this.s._new(v.map((_, i) => { if (i < w - 1) return NaN; const win = v.slice(i - w + 1, i + 1); return win.some(isMissing) ? NaN : fn(win); }), { dtype: 'float64' });
+    constructor(s, w, opts = {}) {
+      this.s = s; this.w = w; this.center = !!opts.center;
+      this.minp = opts.min_periods === undefined || opts.min_periods === null ? w : opts.min_periods;
     }
-    mean() { return this._agg((a) => a.reduce((s, x) => s + x, 0) / a.length); }
-    sum() { return this._agg((a) => a.reduce((s, x) => s + x, 0)); }
+    _vals() { return this.s._num('rolling').map((x) => (typeof x === 'boolean' ? +x : isMissing(x) ? NaN : x)); }
+    _bounds(n) {
+      const w = this.w, off = this.center ? Math.floor((w - 1) / 2) : 0, start = new Array(n), end = new Array(n);
+      for (let i = 0; i < n; i++) { end[i] = Math.min(Math.max(i + 1 + off, 0), n); start[i] = Math.min(Math.max(i + 1 + off - w, 0), n); }
+      return [start, end];
+    }
+    _agg(fn) {
+      const v = this._vals(), [start, end] = this._bounds(v.length), minp = Math.max(this.minp, 1);
+      return this.s._new(v.map((_, i) => { const win = v.slice(start[i], end[i]).filter((x) => !Number.isNaN(x)); return win.length >= minp && win.length ? fn(win) : NaN; }), { dtype: 'float64' });
+    }
+    /* pandas/_libs/window/aggregations.pyx: roll_mean / roll_sum with add_mean / remove_mean (two compensation
+       terms, one for adding and one for removing), the count of negative values and of repeated values */
+    _online(kind) {
+      const v = this._vals(), n = v.length, [start, end] = this._bounds(n), minp = this.minp, out = new Array(n);
+      let sum = 0, compAdd = 0, compRem = 0, nobs = 0, neg = 0, same = 0, prev = NaN;
+      const add = (x) => {
+        if (x !== x) return;
+        nobs++; const y = x - compAdd, t = sum + y; compAdd = t - sum - y; sum = t;
+        if (x < 0 || Object.is(x, -0)) neg++;
+        if (x === prev) same++; else same = 1;
+        prev = x;
+      };
+      const remove = (x) => {
+        if (x !== x) return;
+        nobs--; const y = -x - compRem, t = sum + y; compRem = t - sum - y; sum = t;
+        if (x < 0 || Object.is(x, -0)) neg--;
+      };
+      for (let i = 0; i < n; i++) {
+        const s = start[i], e = end[i];
+        if (i === 0 || s >= end[i - 1]) {
+          sum = compAdd = compRem = 0; nobs = neg = 0; prev = v[s]; same = 0;
+          for (let j = s; j < e; j++) add(v[j]);
+        } else {
+          for (let j = start[i - 1]; j < s; j++) remove(v[j]);
+          for (let j = end[i - 1]; j < e; j++) add(v[j]);
+        }
+        if (kind === 'sum') out[i] = nobs === 0 && minp === 0 ? 0 : nobs >= minp ? (same >= nobs ? prev * nobs : sum) : NaN;
+        else if (nobs >= minp && nobs > 0) {
+          let r = sum / nobs;
+          if (same >= nobs) r = prev; else if (neg === 0 && r < 0) r = 0; else if (neg === nobs && r > 0) r = 0;
+          out[i] = r;
+        } else out[i] = NaN;
+      }
+      return this.s._new(out, { dtype: 'float64' });
+    }
+    mean() { return this._online('mean'); }
+    sum() { return this._online('sum'); }
     min() { return this._agg((a) => Math.min(...a)); }
     max() { return this._agg((a) => Math.max(...a)); }
     std() { return this._agg((a) => S.std(a)); }

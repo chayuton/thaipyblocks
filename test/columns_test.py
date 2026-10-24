@@ -90,13 +90,16 @@ with sync_playwright() as p:
     # cross-validation / grid / prep options on one dataset
     for extra in ['evalMode: "cv"', 'evalMode: "grid"', 'prep: { missing: "fill", dedupe: true, outliers: "clip", scaler: "minmax" }']:
         compare(page, f'wizard: titanic · classification · {extra}', f'PB.R.build(Object.assign({{ task: "classification", models: ["KNeighborsClassifier"] }}, {{ dataset: "titanic" }}, PB.DATASETS.titanic.tasks.classification, {{ {extra} }}))')
+    for task in ['forecast', 'trend_forecast']:  # time series: TimeSeriesSplit instead of the last 20%
+        compare(page, f'wizard: flights · {task} · TimeSeriesSplit', f'PB.R.build(Object.assign({{ task: "{task}", models: ["Ridge"], evalMode: "cv" }}, {{ dataset: "flights" }}, PB.DATASETS.flights.tasks.{task}))')
     # uploaded files through the wizard
     for f in ['customers.csv', 'customers_semi.csv', 'customers.xlsx', 'feedback.csv', 'sales_monthly.csv', 'digits_small.csv', 'thai_tis.csv']:
         upload(page, f)
     for f, dtype, task in [('customers.csv', 'table', 'classification'), ('customers.csv', 'table', 'regression'), ('customers.csv', 'table', 'clustering'),
                            ('customers.csv', 'table', 'pca'), ('customers.csv', 'table', 'anomaly'), ('customers.csv', 'table', 'eda'),
                            ('customers_semi.csv', 'table', 'classification'), ('customers.xlsx', 'table', 'classification'), ('thai_tis.csv', 'table', 'eda'),
-                           ('feedback.csv', 'text', 'text_classification'), ('sales_monthly.csv', 'timeseries', 'forecast'), ('digits_small.csv', 'image', 'image_classification')]:
+                           ('feedback.csv', 'text', 'text_classification'), ('sales_monthly.csv', 'timeseries', 'forecast'),
+                           ('sales_monthly.csv', 'timeseries', 'trend_forecast'), ('sales_monthly.csv', 'timeseries', 'trend'), ('digits_small.csv', 'image', 'image_classification')]:
         js = f'''PB.R.build(Object.assign({{ task: "{task}", models: [PB.TASK_MODELS["{task}"][0]].filter(Boolean), evalMode: "holdout" }}, PB.ui._fileConfig("{f}", "{dtype}", "{task}")))'''
         compare(page, f'file: {f} · {task}', js)
     js = '''(() => { const raw = PB.files.get("customers.csv").df, roles = PB.R.inferRoles(raw); return PB.R.build(Object.assign({ file: "customers.csv", task: "clean" }, PB.R.cleanDefaults(PB.R.cleanScan(raw, roles), {}))); })()'''

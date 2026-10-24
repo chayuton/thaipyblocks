@@ -61,7 +61,7 @@ if command -v qpdf > /dev/null && command -v pdftoppm > /dev/null; then
 else
   printf '== %-15s SKIPPED: install qpdf and pdftoppm (poppler) to run it\n' pdf_test; SKIPPED="$SKIPPED pdf_test"
 fi
-for t in ux_test start_test columns_test lang_test v38_test; do
+for t in ux_test start_test columns_test lang_test v38_test trend_test; do
   run "$t" "$PY" "test/$t.py"; all_passed "$t"
 done
 run thai_check "$PY" test/thai_check.py                   # Thai word segmentation gives the same words as PyThaiNLP

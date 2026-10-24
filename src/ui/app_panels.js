@@ -383,6 +383,10 @@
       cfg.value = has(over.value) ? over.value : nums.find((c) => roles[c] === 'num') || nums[0];
       cfg.dateCol = cols.find((c) => roles[c] === 'date') || null;
       cfg.lags = Math.max(2, Math.min(12, Math.floor(df.nrows / 4))); cfg.start = '2020-01-01'; cfg.freq = 'MS';
+      /* version 3.10: the spacing of the dates tells the frequency, and so the season (month / quarter / weekday) */
+      if (cfg.dateCol) { const f = inferFreq(df.col(cfg.dateCol)); if (f) cfg.freq = f; }
+      const [season, period] = PB.R.SEASON_OF[cfg.freq] || [null, 1];
+      cfg.season = season; cfg.period = period; cfg.decompose = 'additive';
       return cfg;
     }
     if (dtype === 'image') { cfg.target = has(over.target) ? over.target : cols.find((c) => /label|target|class|^y$/i.test(c)) || cols[cols.length - 1]; return cfg; }
@@ -409,6 +413,21 @@
     cfg.num = nums[0]; cfg.cat = cats.find((c) => df.dtypeOf(c) === 'object') || cats[0];
     return cfg;
   }
+  /* the most common gap between consecutive dates → "D" / "W" / "MS" / "QS" / "YS" (null when unclear) */
+  function inferFreq(s) {
+    let t;
+    try { t = PB.toDatetime(s).values.filter((v) => !Number.isNaN(v)); } catch (e) { return null; }
+    if (t.length < 3) return null;
+    const gaps = t.slice(1).map((v, i) => Math.round((v - t[i]) / 86400000)).sort((a, b) => a - b), g = gaps[Math.floor(gaps.length / 2)];
+    const firsts = t.every((v) => new Date(v).getUTCDate() === 1);
+    if (g === 1) return 'D';
+    if (g === 7) return 'W';
+    if (g >= 28 && g <= 31) return firsts ? 'MS' : null;
+    if (g >= 89 && g <= 92) return firsts ? 'QS' : null;
+    if (g >= 365 && g <= 366) return firsts ? 'YS' : null;
+    return null;
+  }
+  A._inferFreq = inferFreq;
   /* Problems that would make the generated program fail, explained before any block is built. */
   function checkConfig(cfg) {
     const df = cfg.file && PB.files.get(cfg.file) ? PB.files.get(cfg.file).df : null;
@@ -421,8 +440,9 @@
     if (t === 'anomaly' && (!cfg.features || !cfg.features.length)) return TR('ไม่พบคอลัมน์ตัวเลขในไฟล์นี้');
     if ((t === 'text_classification' || t === 'text_clustering') && !cfg.text) return TR('ไม่พบคอลัมน์ข้อความในไฟล์นี้');
     if (t === 'text_classification' && cfg.text === cfg.target) return TR('คอลัมน์ข้อความและคอลัมน์คำตอบต้องเป็นคนละคอลัมน์');
-    if ((t === 'forecast' || t === 'trend') && !cfg.value) return TR('ไม่พบคอลัมน์ตัวเลขสำหรับดูแนวโน้มหรือพยากรณ์');
-    if (t === 'forecast' && df.nrows < 12) return TR`ข้อมูลมีเพียง ${df.nrows} แถว การพยากรณ์ต้องมีอย่างน้อย 12 ช่วงเวลา`;
+    if ((t === 'forecast' || t === 'trend' || t === 'trend_forecast') && !cfg.value) return TR('ไม่พบคอลัมน์ตัวเลขสำหรับดูแนวโน้มหรือพยากรณ์');
+    if ((t === 'forecast' || t === 'trend_forecast') && df.nrows < 12) return TR`ข้อมูลมีเพียง ${df.nrows} แถว การพยากรณ์ต้องมีอย่างน้อย 12 ช่วงเวลา`;
+    if (t === 'trend_forecast' && PB.R.seasonOf(cfg) && df.nrows < 2 * PB.R.periodOf(cfg)) return TR`ข้อมูลมีเพียง ${df.nrows} แถว น้อยกว่า 2 รอบฤดูกาล (${2 * PB.R.periodOf(cfg)} ช่วง) โมเดลจึงเรียนผลของแต่ละช่วงในฤดูกาลไม่ได้`;
     if ((t === 'image_classification' || t === 'image_pca') && df.columns.filter((c) => c !== cfg.target).some((c) => !PB.isNumericDtype(df.dtypeOf(c)))) return TR('ข้อมูลภาพต้องมีแต่คอลัมน์ตัวเลข (ค่าพิกเซล) ยกเว้นคอลัมน์ป้ายกำกับ');
     return null;
   }
@@ -434,7 +454,9 @@
     const PREP_TASKS = ['classification', 'regression', 'clustering', 'pca', 'anomaly'];
     const cleaning = pre.task === 'clean';
     if (cleaning) { st.task = 'clean'; if (!pre.file) st.source = PB.files.size ? 'file:' + Array.from(PB.files.keys()).pop() : 'coffee'; }
-    const EVAL_TASKS = ['classification', 'regression', 'text_classification', 'image_classification'];
+    const EVAL_TASKS = ['classification', 'regression', 'text_classification', 'image_classification', 'forecast', 'trend_forecast'];
+    /* time series (version 3.10): keep the order of time — the last 20% as the test set, or TimeSeriesSplit */
+    const TS_EVALS = [['holdout', TR('เก็บช่วงท้ายไว้ทดสอบ'), TR('ฝึกด้วย 80% แรกตามเวลา ทดสอบกับ 20% สุดท้าย (shuffle=False)')], ['cv', TR('TimeSeriesSplit 5 รอบ'), TR('ฝึกด้วยอดีต ทดสอบกับช่วงถัดไป เลื่อนไปทีละช่วง ได้คะแนน 5 ค่า')]];
     const EVALS = [['holdout', TR('แบ่งฝึก / ทดสอบ'), TR('train_test_split แล้ววัดผลกับชุดทดสอบ เร็วที่สุด')], ['cv', TR('Cross-validation 5 รอบ'), TR('สลับชุดทดสอบ 5 รอบ ได้คะแนนเฉลี่ยที่เชื่อถือได้กว่า')], ['grid', 'GridSearchCV', TR('ลองค่าพารามิเตอร์หลายชุดแล้วเลือกชุดที่ดีที่สุดให้ (1 โมเดล)')]];
     const TOKS = [['char', TR('ชิ้นตัวอักษร (char_wb)'), TR('ไม่ต้องตัดคำ ทนต่อคำสะกดผิด')], ['thai', TR('ตัดคำไทย (PyThaiNLP)'), TR('แบ่งเป็นคำด้วยพจนานุกรม อ่านผลเข้าใจง่าย')]];
     if (pre.file && !cleaning) { const r = inferRoles(PB.files.get(pre.file).df); if (Object.values(r).includes('text')) { st.dtype = 'text'; st.task = 'text_classification'; } else if (Object.values(r).includes('date')) { st.dtype = 'timeseries'; st.task = 'forecast'; } }
@@ -483,23 +505,25 @@
       let n = 4;
       if (st.task === 'clean') { body.appendChild(sec(n++, TR('สิ่งที่พบในข้อมูลและวิธีแก้'), cleanIssues())); body.appendChild(sec(n++, TR('ปรับสเกล (Normalize)'), cleanScale())); }
       else if (st.dtype === 'table' && PREP_TASKS.includes(st.task)) body.appendChild(sec(n++, TR('ทำความสะอาด & ปรับสเกล'), prepBox()));
-      const evalOn = EVAL_TASKS.includes(st.task);
+      const evalOn = EVAL_TASKS.includes(st.task), evalList = st.dtype === 'timeseries' ? TS_EVALS : EVALS;
+      if (evalOn && !evalList.some(([k]) => k === st.evalMode)) st.evalMode = 'holdout';
       if (evalOn) {
         let gridNote = null;
         if (st.evalMode === 'grid' && st.models.length) {
           const g = PB.R.GRIDS[st.models[0]];
           gridNote = h('div', { class: 'muted', style: { marginTop: '8px' } }, g ? TR`ค่าที่จะลองกับ ${st.models[0]}: ` + Object.entries(g).map(([k, v]) => `${k} = ${v.replace(/^\[|\]$/g, '').replace(/"/g, '')}`).join(' · ') + TR(' (แก้ได้ในบล็อก GridSearchCV)') : '');
         }
-        body.appendChild(sec(n++, TR('วิธีวัดผล'), h('div', {}, h('div', { class: 'opt-grid' }, EVALS.map(([k, t, d]) => h('button', { type: 'button', class: 'opt', 'aria-pressed': String(st.evalMode === k), onclick: () => { st.evalMode = k; if (k === 'grid') st.models = st.models.slice(0, 1); render(); } }, h('b', {}, t), h('small', {}, d)))), gridNote)));
+        body.appendChild(sec(n++, TR('วิธีวัดผล'), h('div', {}, h('div', { class: 'opt-grid' }, evalList.map(([k, t, d]) => h('button', { type: 'button', class: 'opt', 'aria-pressed': String(st.evalMode === k), onclick: () => { st.evalMode = k; if (k === 'grid') st.models = st.models.slice(0, 1); render(); } }, h('b', {}, t), h('small', {}, d)))), gridNote)));
       }
       if (allowed.length) {
-        const multi = !['pca', 'anomaly', 'clustering', 'forecast', 'text_clustering', 'image_pca'].includes(st.task) && !(evalOn && st.evalMode === 'grid');
+        const multi = !['pca', 'anomaly', 'clustering', 'forecast', 'trend_forecast', 'text_clustering', 'image_pca'].includes(st.task) && !(evalOn && st.evalMode === 'grid');
         body.appendChild(sec(n++, multi ? TR('เลือกโมเดล (เลือกหลายตัว = เปรียบเทียบผล)') : TR('เลือกโมเดล'), h('div', { class: 'opt-grid' }, allowed.map((cls, i) => {
           const M = BK.modelInfo(cls), on = st.models.includes(cls);
           const tags = [];
           if (i === 0) tags.push(h('span', { class: 'tag good' }, TR('แนะนำ')));
           if (M.flags.scale) tags.push(h('span', { class: 'tag' }, TR('ปรับสเกลให้อัตโนมัติ')));
           if (M.flags.slow) tags.push(h('span', { class: 'tag note' }, TR('ฝึกนานกว่า')));
+          if (st.task === 'trend_forecast' && /Tree|Forest|Boosting|KNeighbors/.test(cls)) tags.push(h('span', { class: 'tag note' }, TR('ต่อเส้นแนวโน้มเกินช่วงข้อมูลเดิมไม่ได้')));
           return h('button', { type: 'button', class: 'opt', role: 'checkbox', 'aria-checked': String(on), onclick: () => { if (multi) { st.models = on ? st.models.filter((m) => m !== cls) : st.models.concat(cls); if (!st.models.length) st.models = [cls]; } else st.models = [cls]; render(); } },
             h('span', { class: 'check' }), h('b', {}, M.th), h('code', {}, cls), h('small', {}, M.desc), h('div', { class: 'tags' }, tags));
         }))));
@@ -660,10 +684,15 @@
       if (st.dtype === 'text' && st.tokenizer === 'thai') steps.push(TR('ตัดคำไทย'));
       if (prepOn && st.task !== 'anomaly') { const scaled = st.task === 'clustering' || st.task === 'pca' || st.models.some((m) => BK.modelInfo(m).flags.scale); if (scaled) steps.push(p.scaler === 'none' ? TR('ไม่ปรับสเกล') : TR('ปรับสเกลด้วย ') + PB.R.SCALER_CLS[p.scaler]); }
       const ev = EVAL_TASKS.includes(st.task) ? st.evalMode : 'holdout';
-      if (ev !== 'cv' && ['classification', 'regression', 'text_classification', 'image_classification', 'forecast'].includes(st.task)) steps.push(TR('แบ่งข้อมูลฝึก/ทดสอบ'));
+      if (st.task === 'trend_forecast') steps.push(PB.R.seasonOf(c) ? TR('ลำดับเวลา t + คอลัมน์ 0/1 ของฤดูกาล') : TR('ลำดับเวลา t'));
+      if (st.task === 'trend') steps.push(TR('เส้นแนวโน้ม · ค่าเฉลี่ยเคลื่อนที่ · แยกฤดูกาล'));
+      if (ev !== 'cv' && ['classification', 'regression', 'text_classification', 'image_classification', 'forecast', 'trend_forecast'].includes(st.task)) steps.push(st.dtype === 'timeseries' ? TR('แบ่งข้อมูลฝึก/ทดสอบตามเวลา') : TR('แบ่งข้อมูลฝึก/ทดสอบ'));
+      if (ev === 'cv' && st.dtype === 'timeseries') steps.push(TR('TimeSeriesSplit 5 รอบ'));
+      if (st.task === 'trend_forecast' && ev !== 'cv') steps.push(TR('เทียบกับค่าพยากรณ์แบบง่าย'));
       if (ev === 'grid' && st.models.length) steps.push(TR`GridSearchCV หาค่าพารามิเตอร์ของ ${st.models[0]}`);
       else if (st.models.length > 1 && !['clustering', 'pca', 'anomaly'].includes(st.task)) steps.push(TR`เปรียบเทียบ ${st.models.length} โมเดล${ev === 'cv' ? TR('ด้วย cross-validation') : ''}`);
-      else if (st.models.length) steps.push(st.models[0] + (ev === 'cv' ? TR(' + cross-validation 5 รอบ') : ''));
+      else if (st.models.length) steps.push(st.models[0] + (ev === 'cv' && st.dtype !== 'timeseries' ? TR(' + cross-validation 5 รอบ') : ''));
+      if (st.task === 'forecast' || st.task === 'trend_forecast') steps.push(TR`พยากรณ์ ${st.task === 'forecast' ? c.steps || 12 : PB.R.stepsOf(c)} ช่วงถัดไป`);
       steps.push(st.task === 'eda' || st.task === 'trend' ? TR('สถิติและกราฟ') : TR('วัดผลและกราฟ'));
       return steps.join(' → ');
     }

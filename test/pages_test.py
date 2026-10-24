@@ -124,14 +124,15 @@ RUN_LIST = '''async (items) => { const A = PB.ui, info = %s, out = [];
 # every model-wizard recipe of one sample dataset, as the wizard builds them
 WIZARD_CFGS = '''(ds) => {
   const d = PB.DATASETS[ds], out = [];
-  const EVAL = ['classification', 'regression', 'text_classification', 'image_classification'];
+  const EVAL = ['classification', 'regression', 'text_classification', 'image_classification', 'forecast', 'trend_forecast'];
+  const TS = ['forecast', 'trend_forecast'];   /* time series: the last 20% or TimeSeriesSplit, no GridSearchCV */
   const PREP = ['classification', 'regression', 'clustering', 'pca', 'anomaly'];
   const ALT = [{ missing: 'fill', dedupe: true, outliers: 'clip', scaler: 'minmax' }, { missing: 'drop', dedupe: true, outliers: 'remove', scaler: 'robust' },
                { missing: 'auto', dedupe: false, outliers: 'none', scaler: 'none' }];
   for (const [task, preset] of Object.entries(d.tasks || {})) {
     if (task === 'clean') continue;
     const all = (PB.TASK_MODELS[task] || []).filter(Boolean);
-    for (const ev of EVAL.includes(task) ? ['holdout', 'cv', 'grid'] : ['holdout']) {
+    for (const ev of TS.includes(task) ? ['holdout', 'cv'] : EVAL.includes(task) ? ['holdout', 'cv', 'grid'] : ['holdout']) {
       for (const tok of task.startsWith('text_') ? ['char', 'thai'] : [undefined]) {
         const base = { task, models: ev === 'grid' ? all.slice(0, 1) : all.slice(0, 2), evalMode: ev, tokenizer: tok };
         const preps = !PREP.includes(task) ? [null] : [{ missing: 'auto', dedupe: false, outliers: 'none', scaler: 'standard' }].concat(ev === 'holdout' ? ALT : []);
@@ -228,7 +229,7 @@ def main():
         ids = page.evaluate('PB.SAMPLES.map((s) => s.id)')
         res = run_list(page, [[sid, 'sample', sid] for sid in ids])
         bad = failures(res)
-        ok(f'all {len(ids)} sample projects run without errors', len(ids) == 11 and not bad, '; '.join(bad[:4]))
+        ok(f'all {len(ids)} sample projects run without errors', len(ids) == 13 and not bad, '; '.join(bad[:4]))
         ok('sample projects print values and draw charts', sum(r['prints'] for _, r in res) > 20 and sum(r['charts'] for _, r in res) > 10,
            f"{sum(r['prints'] for _, r in res)} prints, {sum(r['charts'] for _, r in res)} charts")
 
@@ -273,7 +274,7 @@ def main():
           const done = JSON.parse(localStorage.getItem('pyblocks.ex.done.v1') || '{}');
           A.exLeave({ restore: false }); await wait(100);
           return [PB.EXERCISES.length, Object.keys(done).length]; }''')
-        ok(f'all {r[0]} exercise solutions pass the automatic checker', r[0] == 21 and r[1] == 21, f'{r[1]} of {r[0]} marked done')
+        ok(f'all {r[0]} exercise solutions pass the automatic checker', r[0] == 28 and r[1] == 28, f'{r[1]} of {r[0]} marked done')
 
         # ---------- 7. uploads through the real file chooser ----------
         page.click('.topbar [data-act="data"] >> visible=true')
@@ -294,7 +295,7 @@ def main():
                   ('customers.csv', 'table', 'pca'), ('customers.csv', 'table', 'anomaly'), ('customers.csv', 'table', 'eda'),
                   ('customers_semi.csv', 'table', 'classification'), ('customers.xlsx', 'table', 'classification'), ('thai_tis.csv', 'table', 'eda'),
                   ('feedback.csv', 'text', 'text_classification'), ('feedback.csv', 'text', 'text_clustering'), ('sales_monthly.csv', 'timeseries', 'forecast'),
-                  ('digits_small.csv', 'image', 'image_classification')]
+                  ('sales_monthly.csv', 'timeseries', 'trend_forecast'), ('sales_monthly.csv', 'timeseries', 'trend'), ('digits_small.csv', 'image', 'image_classification')]
         items = page.evaluate('''(combos) => combos.map(([f, dtype, task]) => {
             const cfg = Object.assign({ task, models: [(PB.TASK_MODELS[task] || [])[0]].filter(Boolean), evalMode: 'holdout', tokenizer: dtype === 'text' ? 'thai' : undefined },
                                       PB.ui._fileConfig(f, dtype, task));

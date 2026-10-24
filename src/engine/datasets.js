@@ -65,7 +65,12 @@
     flights: {
       title: TR('ผู้โดยสารสายการบิน'), en: 'Airline passengers', rows: 144, type: 'timeseries', url: SEABORN + 'flights.csv',
       desc: TR('จำนวนผู้โดยสารสายการบินรายเดือน ปี 1949–1960 (144 เดือน)'),
-      tasks: { forecast: { value: 'passengers', start: '1949-01', freq: 'MS', lags: 12 }, trend: { value: 'passengers', start: '1949-01', freq: 'MS', window: 12 } },
+      tasks: {
+        forecast: { value: 'passengers', start: '1949-01', freq: 'MS', lags: 12 },
+        /* version 3.10: the seasonal swings grow with the trend, so the decomposition is multiplicative */
+        trend_forecast: { value: 'passengers', start: '1949-01', freq: 'MS', steps: 12 },
+        trend: { value: 'passengers', start: '1949-01', freq: 'MS', window: 12, decompose: 'multiplicative' },
+      },
     },
     thai_reviews: {
       title: TR('รีวิวสินค้าภาษาไทย'), en: 'Thai reviews', rows: 120, type: 'text', url: null,

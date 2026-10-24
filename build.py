@@ -3,8 +3,8 @@ import re, os, sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'src')
 JS = ['engine/core.js', 'i18n_en.js', 'engine/frame.js', 'engine/ml_base.js', 'engine/clean.js', 'engine/linear.js', 'engine/tree.js', 'engine/others.js',
-      'engine/cluster.js', 'engine/text.js', 'engine/metrics.js', 'engine/search.js', 'engine/select.js', 'engine/textclean.js', 'engine/thai.js', 'thai_dict.js', 'engine/datasets.js', 'data.js',
-      'blocks/dsl.js', 'blocks/interp.js', 'blocks/b_data.js', 'blocks/b_ml.js', 'blocks/b_viz.js', 'blocks/b_more.js', 'blocks/b_clean.js', 'blocks/std.js',
+      'engine/cluster.js', 'engine/text.js', 'engine/metrics.js', 'engine/search.js', 'engine/select.js', 'engine/textclean.js', 'engine/timeseries.js', 'engine/thai.js', 'thai_dict.js', 'engine/datasets.js', 'data.js',
+      'blocks/dsl.js', 'blocks/interp.js', 'blocks/b_data.js', 'blocks/b_ml.js', 'blocks/b_viz.js', 'blocks/b_more.js', 'blocks/b_clean.js', 'blocks/b_ts.js', 'blocks/std.js',
       'ui/recipes.js', 'ui/util.js', 'ui/charts.js', 'ui/toolbox.js', 'ui/schema.js', 'ui/lang.js', 'ui/app_core.js', 'ui/exercises.js', 'ui/report.js', 'ui/pdf.js', 'ui/start.js', 'ui/app_panels.js']
 read = lambda p: open(os.path.join(SRC, p), encoding='utf-8').read()
 html = read('index.html')

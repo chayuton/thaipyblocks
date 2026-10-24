@@ -337,41 +337,121 @@
   }
 
   /* ---------- time series ---------- */
+  const dateSteps = (cfg) => [cfg.dateCol
+    ? R.b('pb_set_col', { DF: df, NAME: 'date' }, { VAL: R.b('pb_to_datetime', { DF: df, COL: cfg.dateCol }) })
+    : R.b('pb_date_range', { DF: df, NAME: 'date', START: cfg.start || '2020-01-01', FREQ: cfg.freq || 'MS' })];
+  /* the part of the date that repeats every season: month (monthly data, period 12), quarter (4), day of week (7) */
+  const SEASON_FN = { month: 'month', quarter: 'quarter', dayofweek: 'dow' };
+  R.SEASON_OF = { MS: ['month', 12], QS: ['quarter', 4], D: ['dayofweek', 7], W: [null, 1], YS: [null, 1] };
+  const seasonOf = (cfg) => (cfg.season !== undefined ? cfg.season : (R.SEASON_OF[cfg.freq || 'MS'] || [null])[0]);
+  const periodOf = (cfg) => cfg.period || (R.SEASON_OF[cfg.freq || 'MS'] || [null, 1])[1];
+  R.seasonOf = seasonOf; R.periodOf = periodOf;
+  /* how far a trend model looks ahead: one season (12 months, 4 quarters, 7 days), at least 4 periods */
+  R.stepsOf = (cfg) => cfg.steps || Math.max(periodOf(cfg), 4);
+  const note = (t) => R.b('pb_comment', { TEXT: t });
+  /* time-series cross-validation (TimeSeriesSplit 5 splits, scored by the mean absolute error) */
+  function tsCv(S) {
+    S.push(R.set('scores', R.b('pb_cv_ts', { X: V('X'), Y: V('y'), K: 5, SC: 'neg_mean_absolute_error' }, { M: R.get('model') })));
+    S.push(R.print2(TR('คะแนนแต่ละรอบ (−MAE):'), R.get('scores')));
+    S.push(R.print2(TR('MAE เฉลี่ย:'), R.b('math_single', { OP: 'NEG' }, { NUM: R.b('pb_arr_stat', { FN: 'mean' }, { X: R.get('scores') }) })));
+    S.push(R.b('pb_plot_list', { KIND: 'bar', TITLE: TR('−MAE ของแต่ละรอบ (รอบหลังฝึกด้วยข้อมูลยาวกว่า)') }, { DATA: R.get('scores') }));
+  }
   function forecast(cfg) {
     const val = cfg.value, L = cfg.lags || 12, m = cfg.models[0] || 'LinearRegression';
     const S = loadSteps(cfg);
-    if (cfg.dateCol) S.push(R.b('pb_set_col', { DF: df, NAME: 'date' }, { VAL: R.b('pb_to_datetime', { DF: df, COL: cfg.dateCol }) }));
-    else S.push(R.b('pb_date_range', { DF: df, NAME: 'date', START: cfg.start || '2020-01-01', FREQ: cfg.freq || 'MS' }));
+    S.push(...dateSteps(cfg));
     S.push(R.b('pb_plot_xy', { KIND: 'lineplot', DF: df, X: 'date', Y: val, HUE: '', TITLE: TR`${val} ตามเวลา` }));
     S.push(R.b('pb_lags', { DF: df, COL: val, N: L }));
     S.push(R.set('data', R.b('pb_df_clean', { DF: df, FN: 'dropna' })));
     S.push(R.set('data', R.b('pb_df_clean', { DF: V('data'), FN: 'reset' })));
     S.push(R.set('X', R.b('pb_cols', { DF: V('data'), COLS: PB.range(L).map((i) => 'lag_' + (i + 1)).join(', ') })));
     S.push(R.set('y', R.b('pb_col', { DF: V('data'), COL: val })));
-    S.push(R.b('pb_split', { XTR: V('X_train'), XTE: V('X_test'), YTR: V('y_train'), YTE: V('y_test'), X: V('X'), Y: V('y'), TS: 0.2, RS: 42, MODE: 'time' }));
-    S.push(R.set('model', modelExpr(m)));
-    S.push(R.b('pb_fit', { M: V('model'), X: V('X_train'), Y: V('y_train') }));
-    S.push(R.set('y_pred', R.b('pb_predict', { M: V('model'), FN: 'predict', X: V('X_test') })));
-    S.push(R.print2('MAE:', R.b('pb_metric', { FN: 'mean_absolute_error', YT: V('y_test'), YP: V('y_pred') })));
-    S.push(R.print2('MAPE:', R.b('pb_metric', { FN: 'mape', YT: V('y_test'), YP: V('y_pred') })));
-    S.push(R.b('pb_plot_pred', { YT: V('y_test'), YP: V('y_pred') }));
+    if (cfg.evalMode === 'cv') {
+      S.push(R.set('model', modelExpr(m)));
+      tsCv(S);
+    } else {
+      S.push(R.b('pb_split', { XTR: V('X_train'), XTE: V('X_test'), YTR: V('y_train'), YTE: V('y_test'), X: V('X'), Y: V('y'), TS: 0.2, RS: 42, MODE: 'time' }));
+      S.push(R.set('model', modelExpr(m)));
+      S.push(R.b('pb_fit', { M: V('model'), X: V('X_train'), Y: V('y_train') }));
+      S.push(R.set('y_pred', R.b('pb_predict', { M: V('model'), FN: 'predict', X: V('X_test') })));
+      S.push(R.print2('MAE:', R.b('pb_metric', { FN: 'mean_absolute_error', YT: V('y_test'), YP: V('y_pred') })));
+      S.push(R.print2('MAPE:', R.b('pb_metric', { FN: 'mape', YT: V('y_test'), YP: V('y_pred') })));
+      S.push(R.b('pb_plot_pred', { YT: V('y_test'), YP: V('y_pred') }));
+    }
     S.push(R.b('pb_fit', { M: V('model'), X: V('X'), Y: V('y') }));
     S.push(R.set('forecast', R.b('pb_forecast', { M: V('model'), DF: df, COL: val, L, S: cfg.steps || 12 })));
     S.push(R.print2(TR('ค่าพยากรณ์:'), R.get('forecast')));
     S.push(R.b('pb_plot_forecast', { DF: df, DATE: 'date', DF2: df, COL: val, FC: V('forecast') }));
     return S;
   }
+  /* version 3.10: trend analysis — the trend line (LinearRegression on the time index t), smoothing (moving
+     average, exponential) and the classical decomposition with the seasonal index of each month */
   function trend(cfg) {
-    const val = cfg.value, w = cfg.window || 12;
+    const val = cfg.value, w = cfg.window || 12, season = seasonOf(cfg), period = periodOf(cfg);
     const S = loadSteps(cfg);
-    if (cfg.dateCol) S.push(R.b('pb_set_col', { DF: df, NAME: 'date' }, { VAL: R.b('pb_to_datetime', { DF: df, COL: cfg.dateCol }) }));
-    else S.push(R.b('pb_date_range', { DF: df, NAME: 'date', START: cfg.start || '2020-01-01', FREQ: cfg.freq || 'MS' }));
+    S.push(...dateSteps(cfg));
+    S.push(note(TR('เส้นแนวโน้ม: ให้ LinearRegression ทาย y จากลำดับเวลา t = 0, 1, 2, …')));
+    S.push(R.b('pb_time_index', { DF: df, NAME: 't' }));
+    S.push(R.set('X', R.b('pb_cols', { DF: df, COLS: 't' })));
+    S.push(R.set('y', R.b('pb_col', { DF: df, COL: val })));
+    S.push(R.set('model', R.model('LinearRegression')));
+    S.push(R.b('pb_fit', { M: V('model'), X: V('X'), Y: V('y') }));
+    S.push(R.b('pb_set_col', { DF: df, NAME: 'trend' }, { VAL: R.b('pb_predict', { M: V('model'), FN: 'predict', X: V('X') }) }));
+    S.push(R.print2(TR('แนวโน้มเปลี่ยนต่อช่วงเวลา (coef_):'), R.b('pb_attr', { M: V('model'), ATTR: 'coef_' })));
+    S.push(note(TR('ปรับเรียบ: ค่าเฉลี่ยเคลื่อนที่ และค่าเฉลี่ยแบบเอกซ์โพเนนเชียล (ewm)')));
     S.push(R.b('pb_set_col', { DF: df, NAME: 'rolling_mean' }, { VAL: R.b('pb_rolling', { DF: df, COL: val, N: w, AGG: 'mean' }) }));
-    S.push(R.b('pb_set_col', { DF: df, NAME: 'pct_change' }, { VAL: R.b('pb_col_func', { DF: df, COL: val, FN: 'pct' }) }));
+    S.push(R.b('pb_set_col', { DF: df, NAME: 'ewm' }, { VAL: R.b('pb_ewm', { DF: df, COL: val, A: 0.3 }) }));
     S.push(R.print(R.b('pb_df_view', { DF: df, FN: 'tail', N: 5 })));
+    S.push(R.b('pb_plot_lines', { DF: df, X: 'date', COLS: [val, 'trend', 'rolling_mean', 'ewm'].join(', '), TITLE: TR`แนวโน้มของ ${val}` }));
+    const data = R.prepData(cfg);
+    if (period > 1 && data && data.nrows >= 2 * period) {
+      S.push(note(TR`แยกแนวโน้มและฤดูกาลที่ซ้ำทุก ${period} ช่วง แล้วดูค่าฤดูกาลเฉลี่ยของแต่ละ${{ month: TR('เดือน'), quarter: TR('ไตรมาส'), dayofweek: TR('วันในสัปดาห์') }[season] || TR('ช่วง')}`));
+      S.push(R.set('parts', R.b('pb_decompose', { DF: df, COL: val, P: period, M: cfg.decompose || 'additive' })));
+      S.push(R.b('pb_plot_decompose', { P: V('parts'), DF: df, DATE: 'date' }));
+      if (season) {
+        S.push(R.b('pb_set_col', { DF: V('parts'), NAME: season }, { VAL: R.b('pb_col_func', { DF: df, COL: 'date', FN: SEASON_FN[season] }) }));
+        S.push(R.print(R.b('pb_groupby', { DF: V('parts'), BY: season, COL: 'seasonal', AGG: 'mean' })));
+      }
+    }
+    return S;
+  }
+  /* version 3.10: trend forecasting — y from the time index t (trend) and dummies of the month (season) with a
+     regression model, measured against the seasonal naive baseline on the last 20% (or TimeSeriesSplit), then
+     refitted on all the data and used on the next periods (make_future + the same dummies + reindex) */
+  function trendForecast(cfg) {
+    const val = cfg.value, m = cfg.models[0] || 'LinearRegression', season = seasonOf(cfg), period = periodOf(cfg);
+    const feats = season ? ['t', season] : ['t'];
+    const S = loadSteps(cfg);
+    S.push(...dateSteps(cfg));
+    S.push(note(TR`ฟีเจอร์: ลำดับเวลา t (แนวโน้ม)${season ? TR` และ${{ month: TR('เดือน'), quarter: TR('ไตรมาส'), dayofweek: TR('วันในสัปดาห์') }[season]}เป็นคอลัมน์ 0/1 (ฤดูกาล)` : ''}`));
+    S.push(R.b('pb_time_index', { DF: df, NAME: 't' }));
+    if (season) S.push(R.b('pb_set_col', { DF: df, NAME: season }, { VAL: R.b('pb_col_func', { DF: df, COL: 'date', FN: SEASON_FN[season] }) }));
     S.push(R.b('pb_plot_xy', { KIND: 'lineplot', DF: df, X: 'date', Y: val, HUE: '', TITLE: TR`${val} ตามเวลา` }));
-    S.push(R.b('pb_plot_xy', { KIND: 'lineplot', DF: df, X: 'date', Y: 'rolling_mean', HUE: '', TITLE: TR`ค่าเฉลี่ยเคลื่อนที่ ${w} ช่วง` }));
-    S.push(R.b('pb_plot_dist', { KIND: 'histplot', DF: df, X: 'pct_change', HUE: '', TITLE: TR('การเปลี่ยนแปลงต่อช่วง (%)') }));
+    S.push(R.set('X', R.b('pb_cols', { DF: df, COLS: feats.join(', ') })));
+    if (season) S.push(R.set('X', R.b('pb_get_dummies', { DF: V('X'), COLS: season, DROP: 'True' })));
+    S.push(R.set('y', R.b('pb_col', { DF: df, COL: val })));
+    S.push(R.set('model', modelExpr(m)));
+    if (cfg.evalMode === 'cv') tsCv(S);
+    else {
+      S.push(R.b('pb_split', { XTR: V('X_train'), XTE: V('X_test'), YTR: V('y_train'), YTE: V('y_test'), X: V('X'), Y: V('y'), TS: 0.2, RS: 42, MODE: 'time' }));
+      S.push(R.b('pb_fit', { M: V('model'), X: V('X_train'), Y: V('y_train') }));
+      S.push(R.set('y_pred', R.b('pb_predict', { M: V('model'), FN: 'predict', X: V('X_test') })));
+      S.push(R.set('y_naive', R.b('pb_naive', { Y: V('y_train'), S: period }, { N: R.b('pb_len', {}, { X: R.get('y_test') }) })));
+      S.push(R.print2(TR('MAE ของโมเดล:'), R.b('pb_metric', { FN: 'mean_absolute_error', YT: V('y_test'), YP: V('y_pred') })));
+      S.push(R.print2(TR('MAE ของค่าพยากรณ์แบบง่าย:'), R.b('pb_metric', { FN: 'mean_absolute_error', YT: V('y_test'), YP: V('y_naive') })));
+      S.push(R.print2(TR('MAPE ของโมเดล:'), R.b('pb_metric', { FN: 'mape', YT: V('y_test'), YP: V('y_pred') })));
+      S.push(R.b('pb_set_col', { DF: df, NAME: 'predicted' }, { VAL: R.b('pb_predict', { M: V('model'), FN: 'predict', X: V('X') }) }));
+      S.push(R.b('pb_plot_lines', { DF: df, X: 'date', COLS: `${val}, predicted`, TITLE: TR('ค่าจริงเทียบกับค่าทำนาย (20% ช่วงท้ายคือชุดทดสอบ)') }));
+    }
+    S.push(note(TR('ฝึกโมเดลด้วยข้อมูลทั้งหมด แล้วทายช่วงเวลาถัดไป (ตาราง X ของอนาคตต้องมีคอลัมน์ชุดเดียวกับ X)')));
+    S.push(R.b('pb_fit', { M: V('model'), X: V('X'), Y: V('y') }));
+    S.push(R.set('future', R.b('pb_future', { DF: df, DATE: 'date', S: R.stepsOf(cfg), FREQ: cfg.freq || 'MS', SEASON: season || 'None' })));
+    S.push(R.set('X_future', R.b('pb_cols', { DF: V('future'), COLS: feats.join(', ') })));
+    if (season) S.push(R.set('X_future', R.b('pb_get_dummies', { DF: V('X_future'), COLS: season, DROP: 'True' })));
+    S.push(R.set('X_future', R.b('pb_align_cols', { DF: V('X_future'), REF: V('X') })));
+    S.push(R.set('forecast', R.b('pb_predict', { M: V('model'), FN: 'predict', X: V('X_future') })));
+    S.push(R.print2(TR('ค่าพยากรณ์:'), R.get('forecast')));
+    S.push(R.b('pb_plot_forecast', { DF: df, DATE: 'date', DF2: df, COL: val, FC: V('forecast') }));
     return S;
   }
 
@@ -620,7 +700,7 @@
   }
 
   R.build = (cfg) => {
-    const f = { classification: supervised, regression: supervised, clustering, pca, anomaly, eda, clean: cleanTask, text_classification: textClassification, text_clustering: textClustering, forecast, trend, image_classification: imageClassification, image_pca: imagePca }[cfg.task];
+    const f = { classification: supervised, regression: supervised, clustering, pca, anomaly, eda, clean: cleanTask, text_classification: textClassification, text_clustering: textClustering, forecast, trend, trend_forecast: trendForecast, image_classification: imageClassification, image_pca: imagePca }[cfg.task];
     if (!f) throw new Error('unknown task ' + cfg.task);
     return R.program(f(applyPrep(cfg)));
   };
@@ -642,7 +722,8 @@
     ],
     timeseries: [
       ['forecast', TR('พยากรณ์อนาคต'), TR('ใช้ค่าย้อนหลังทำนายช่วงเวลาถัดไป')],
-      ['trend', TR('ดูแนวโน้ม'), TR('ค่าเฉลี่ยเคลื่อนที่และอัตราการเปลี่ยนแปลง')],
+      ['trend_forecast', TR('พยากรณ์แนวโน้ม + ฤดูกาล'), TR('ทายจากลำดับเวลาและเดือน เทียบกับค่าพยากรณ์แบบง่าย แล้วพยากรณ์ช่วงถัดไป')],
+      ['trend', TR('ดูแนวโน้มและฤดูกาล'), TR('เส้นแนวโน้ม ค่าเฉลี่ยเคลื่อนที่ และแยกส่วนประกอบตามฤดูกาล')],
     ],
     image: [
       ['image_classification', TR('จำแนกภาพ'), TR('ทายว่าภาพคืออะไรจากค่าพิกเซล')],
@@ -657,6 +738,7 @@
     text_classification: ['MultinomialNB', 'LogisticRegression', 'SVC', 'RandomForestClassifier'],
     text_clustering: ['KMeans', 'AgglomerativeClustering'],
     forecast: ['LinearRegression', 'Ridge', 'RandomForestRegressor', 'GradientBoostingRegressor', 'KNeighborsRegressor', 'MLPRegressor'],
+    trend_forecast: ['LinearRegression', 'Ridge', 'RandomForestRegressor', 'GradientBoostingRegressor'],
     trend: [],
     image_classification: ['SVC', 'KNeighborsClassifier', 'LogisticRegression', 'RandomForestClassifier', 'MLPClassifier'],
     image_pca: ['PCA'],
@@ -705,6 +787,8 @@
     { id: 'penguins', title: TR('จัดกลุ่มนกเพนกวิน'), sub: TR('KMeans + PCA · ตาราง'), build: () => R.build(sampleCfg('penguins', 'clustering', ['KMeans'])) },
     { id: 'reviews', title: TR('วิเคราะห์ความรู้สึกรีวิวภาษาไทย'), sub: TR('TF-IDF + Naive Bayes · ข้อความ'), build: () => R.build(sampleCfg('thai_reviews', 'text_classification', ['MultinomialNB'])) },
     { id: 'flights', title: TR('พยากรณ์ผู้โดยสารสายการบิน'), sub: TR('ค่าย้อนหลัง + LinearRegression · อนุกรมเวลา'), build: () => R.build(sampleCfg('flights', 'forecast', ['LinearRegression'])) },
+    { id: 'flights_trend', title: TR('แนวโน้มและฤดูกาลของผู้โดยสาร'), sub: TR('เส้นแนวโน้ม ค่าเฉลี่ยเคลื่อนที่ แยกฤดูกาล · อนุกรมเวลา'), build: () => R.build(sampleCfg('flights', 'trend', [])) },
+    { id: 'flights_season', title: TR('พยากรณ์แนวโน้ม + ฤดูกาลของผู้โดยสาร'), sub: TR('ลำดับเวลา + เดือน → LinearRegression เทียบค่าพยากรณ์แบบง่าย · อนุกรมเวลา'), build: () => R.build(sampleCfg('flights', 'trend_forecast', ['LinearRegression'])) },
     { id: 'digits', title: TR('อ่านตัวเลขลายมือ'), sub: TR('SVC · รูปภาพ 8×8'), build: () => R.build(sampleCfg('digits', 'image_classification', ['SVC'])) },
     { id: 'tips', title: TR('หาบิลผิดปกติในร้านอาหาร'), sub: TR('IsolationForest · ตาราง'), build: () => R.build(sampleCfg('tips', 'anomaly', ['IsolationForest'])) },
     { id: 'eda', title: TR('สำรวจข้อมูลไททานิก'), sub: TR('สถิติ ค่าว่าง กราฟ · ตาราง'), build: () => R.build(sampleCfg('titanic', 'eda', [])) },

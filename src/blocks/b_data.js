@@ -227,8 +227,8 @@
     *run(b, I) { const s = I.df(b).col(I.colName(b)); const v = yield* I.needRaw(b, 'VAL'); return s.arith(b.getFieldValue('OP'), v); },
     ex: (b, X) => T(X, `ค่าในคอลัมน์ ${X.f(b, 'COL')} ${X.f(b, 'OP')} ${X.in(b, 'VAL')}`, `column ${X.f(b, 'COL')} ${X.f(b, 'OP')} ${X.in(b, 'VAL')}`),
   });
-  const CFN = [['.astype(float)', 'float'], ['.astype(int)', 'int'], ['.astype(str)', 'str'], ['.str.lower()', 'lower'], ['.str.upper()', 'upper'], ['.str.len()', 'len'], ['.round(2)', 'round2'], ['.abs()', 'abs'], ['.cumsum()', 'cumsum'], ['.shift(1)', 'shift'], ['.diff()', 'diff'], ['.pct_change()', 'pct'], ['.dt.year', 'year'], ['.dt.month', 'month'], ['.dt.dayofweek', 'dow']];
-  const CFN_TH = { float: 'แปลงเป็นทศนิยม', int: 'แปลงเป็นจำนวนเต็ม', str: 'แปลงเป็นข้อความ', lower: 'แปลงเป็นตัวพิมพ์เล็ก', upper: 'แปลงเป็นตัวพิมพ์ใหญ่', len: 'ความยาวข้อความ', round2: 'ปัดเศษ 2 ตำแหน่ง', abs: 'ค่าสัมบูรณ์', cumsum: 'ผลรวมสะสม', shift: 'ค่าของแถวก่อนหน้า', diff: 'ผลต่างจากแถวก่อนหน้า', pct: 'เปอร์เซ็นต์การเปลี่ยนแปลง', year: 'ปี', month: 'เดือน', dow: 'วันในสัปดาห์ (0=จันทร์)' }; /* th-en */
+  const CFN = [['.astype(float)', 'float'], ['.astype(int)', 'int'], ['.astype(str)', 'str'], ['.str.lower()', 'lower'], ['.str.upper()', 'upper'], ['.str.len()', 'len'], ['.round(2)', 'round2'], ['.abs()', 'abs'], ['.cumsum()', 'cumsum'], ['.shift(1)', 'shift'], ['.diff()', 'diff'], ['.pct_change()', 'pct'], ['.dt.year', 'year'], ['.dt.month', 'month'], ['.dt.quarter', 'quarter'], ['.dt.dayofweek', 'dow']];
+  const CFN_TH = { float: 'แปลงเป็นทศนิยม', int: 'แปลงเป็นจำนวนเต็ม', str: 'แปลงเป็นข้อความ', lower: 'แปลงเป็นตัวพิมพ์เล็ก', upper: 'แปลงเป็นตัวพิมพ์ใหญ่', len: 'ความยาวข้อความ', round2: 'ปัดเศษ 2 ตำแหน่ง', abs: 'ค่าสัมบูรณ์', cumsum: 'ผลรวมสะสม', shift: 'ค่าของแถวก่อนหน้า', diff: 'ผลต่างจากแถวก่อนหน้า', pct: 'เปอร์เซ็นต์การเปลี่ยนแปลง', year: 'ปี', month: 'เดือน', quarter: 'ไตรมาส', dow: 'วันในสัปดาห์ (0=จันทร์)' }; /* th-en */
   def('pb_col_func', {
     cat: 'data', out: true, py: '{DF}[{COL}]{FN}', f: { DF: { t: 'var', def: 'df' }, COL: { t: 'col' }, FN: { t: 'dd', opts: CFN } },
     tip: TR('แปลงหรือคำนวณค่าในคอลัมน์ทีละแถว'),
@@ -240,7 +240,7 @@
         case 'lower': case 'upper': case 'len': return s.str_op(fn);
         case 'round2': return s.round(2);
         case 'abs': return s.abs(); case 'cumsum': return s.cumsum(); case 'shift': return s.shift(1); case 'diff': return s.diff(1); case 'pct': return s.pct_change(1);
-        case 'year': return s.dt('year'); case 'month': return s.dt('month'); case 'dow': return s.dt('dayofweek');
+        case 'year': return s.dt('year'); case 'month': return s.dt('month'); case 'quarter': return s.dt('quarter'); case 'dow': return s.dt('dayofweek');
       }
       return s;
     },

@@ -88,7 +88,7 @@ with sync_playwright() as p:
     # ---------- 4. sample projects through the gallery ----------
     page.click('#start [data-start="samples"]'); page.wait_for_selector('.modal .sample-grid')
     ids = page.evaluate('Array.from(document.querySelectorAll(".modal [data-sample]")).map((b) => b.dataset.sample)')
-    check('"โครงงานตัวอย่าง" lists every sample project', ids == page.evaluate('PB.SAMPLES.map((s) => s.id)') and len(ids) == 11, str(ids))
+    check('"โครงงานตัวอย่าง" lists every sample project', ids == page.evaluate('PB.SAMPLES.map((s) => s.id)') and len(ids) == 13, str(ids))
     page.click('.modal [data-sample="titanic"]'); settle(page, 500)
     s = page.evaluate(STATE)
     check('a sample from the gallery is built and run', not s['shown'] and s['all'] > 20 and s['cells'] > 3 and not s['err'], str(s))

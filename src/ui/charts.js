@@ -185,14 +185,15 @@
 
   /* ---------- line ---------- */
   function line(spec, f) {
-    const { w, h } = sizeOf(f, 0.5);
+    /* compact: the small stacked panels of a decomposition (observed / trend / seasonal / resid) */
+    const { w, h } = spec.compact ? sizeOf(f, 0.26, 130, 190) : sizeOf(f, 0.5);
     const m = { l: 56, r: 18, t: 12, b: 40 };
     const series = spec.series.filter((s) => s.points.length);
     const catX = spec.x.categorical;
     let xVals = [];
     if (catX) { const seen = new Map(); series.forEach((s) => s.points.forEach(([x]) => { if (!seen.has(PB.keyOf(x))) seen.set(PB.keyOf(x), x); })); xVals = Array.from(seen.values()); }
     const allX = series.flatMap((s) => s.points.map((p) => p[0])), allY = series.flatMap((s) => s.points.map((p) => p[1])).filter(Number.isFinite);
-    const sy = niceScale(Math.min(...allY), Math.max(...allY));
+    const sy = niceScale(Math.min(...allY), Math.max(...allY), spec.compact ? 3 : 5);
     const xlo = catX ? 0 : Math.min(...allX), xhi = catX ? Math.max(1, xVals.length - 1) : Math.max(...allX);
     const X = catX ? (v) => lin(0, Math.max(1, xVals.length - 1), m.l + 10, w - m.r - 10)(xVals.findIndex((q) => PB.keyOf(q) === PB.keyOf(v))) : lin(xlo, xhi === xlo ? xlo + 1 : xhi, m.l, w - m.r);
     const Y = lin(sy.lo, sy.hi, h - m.b, m.t);

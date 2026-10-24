@@ -23,6 +23,8 @@
   --warn-soft: #fbf0d9;
   --err: #b3362f;
   --err-soft: #fbe6e4;
+  --lv4: #5a3fb3;
+  --lv4-soft: #eeeafb;
   --code-bg: #f3f6f9;
   --tok-kw: #8a3fb5;
   --tok-str: #1d7a4f;
@@ -49,7 +51,7 @@
     --bg: #0b1117; --surface: #121a23; --surface-2: #17212c; --surface-3: #1e2a37; --canvas: #0f161e; --line: #273443; --line-soft: #1f2a37;
     --ink: #e4ebf3; --ink-2: #a6b3c2; --ink-3: #7d8b9c; --accent: #79aeeb; --accent-ink: #0a1420; --accent-soft: #1a2a3d;
     --signal: #f2c94c; --signal-ink: #1c1600; --signal-hover: #f7d667;
-    --ok: #4cc28a; --ok-soft: #12291f; --warn: #e3ad4f; --warn-soft: #2c2312; --err: #f07a72; --err-soft: #321a19;
+    --ok: #4cc28a; --ok-soft: #12291f; --warn: #e3ad4f; --warn-soft: #2c2312; --err: #f07a72; --err-soft: #321a19; --lv4: #b6a8f4; --lv4-soft: #241e3d;
     --code-bg: #0f171f; --tok-kw: #c79af0; --tok-str: #7fd3a6; --tok-num: #f0a37a; --tok-com: #7d8b9c; --tok-fn: #8ab9f0;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .45);
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
@@ -61,7 +63,7 @@
   --bg: #0b1117; --surface: #121a23; --surface-2: #17212c; --surface-3: #1e2a37; --canvas: #0f161e; --line: #273443; --line-soft: #1f2a37;
   --ink: #e4ebf3; --ink-2: #a6b3c2; --ink-3: #7d8b9c; --accent: #79aeeb; --accent-ink: #0a1420; --accent-soft: #1a2a3d;
   --signal: #f2c94c; --signal-ink: #1c1600; --signal-hover: #f7d667;
-  --ok: #4cc28a; --ok-soft: #12291f; --warn: #e3ad4f; --warn-soft: #2c2312; --err: #f07a72; --err-soft: #321a19;
+  --ok: #4cc28a; --ok-soft: #12291f; --warn: #e3ad4f; --warn-soft: #2c2312; --err: #f07a72; --err-soft: #321a19; --lv4: #b6a8f4; --lv4-soft: #241e3d;
   --code-bg: #0f171f; --tok-kw: #c79af0; --tok-str: #7fd3a6; --tok-num: #f0a37a; --tok-com: #7d8b9c; --tok-fn: #8ab9f0;
   --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .45);
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
@@ -432,6 +434,7 @@ label.cl-title { cursor: pointer; }
 .ex-level.l1 { background: var(--ok-soft); color: var(--ok); }
 .ex-level.l2 { background: var(--accent-soft); color: var(--accent); }
 .ex-level.l3 { background: var(--warn-soft); color: var(--warn); }
+.ex-level.l4 { background: var(--lv4-soft); color: var(--lv4); }
 #task-body { padding: 16px 18px 48px; display: grid; gap: 16px; max-width: 780px; }
 #task-body code, .ex-list code { font: 500 12.5px var(--font-mono); background: var(--surface-3); color: var(--ink); padding: 0 5px; border-radius: 4px; word-break: break-word; }
 .ex-top { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }

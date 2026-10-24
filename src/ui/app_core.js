@@ -176,8 +176,19 @@
     },
     chart(spec, block) {
       this.log.push({ kind: 'chart', chart: spec.kind, title: spec.title || '', block: block ? block.type : null });
-      const box = h('div'), cell = this._cell('chart', block, box, { src: true });
+      const box = h('div');
+      /* the further panels of one figure (spec.panel ≥ 1, e.g. trend / seasonal / resid of a decomposition) go into the
+         cell of its first panel, like the subplots of one matplotlib figure */
+      const last = outBody().lastElementChild;
+      if (spec.panel && last && last._pbCharts && block && last._pbBlockId === block.id) {
+        last.querySelector('.cell-body').appendChild(box);
+        last._pbCharts.push(spec);
+        PB.charts.render(spec, box); A.bump();
+        return;
+      }
+      const cell = this._cell('chart', block, box, { src: true });
       cell._pbChart = spec;                    /* kept so the PDF export can draw the chart again at page width */
+      cell._pbCharts = [spec]; cell._pbBlockId = block ? block.id : null;
       PB.charts.render(spec, box); A.bump();
     },
     note(text, block) { this._cell('note', block, h('div', { class: 'out-text' }, text)); },

@@ -2,7 +2,7 @@
 
 Every sample project runs and its outputs, Python code (comments) and explanations contain no Thai; every toolbox
 category, the model wizard for each data type, the cleaning assistant, My data, the variables / code / explain tabs,
-error messages, the HTML report and all 21 exercises (solutions must pass) are scanned for Thai text, and TR() must
+error messages, the HTML report and all 28 exercises (solutions must pass) are scanned for Thai text, and TR() must
 never meet a text missing from src/i18n_en.js. Thai that is data is allowed: the Thai reviews, the coffee shop's
 place names and placeholder words, Thai sample sentences, the Thai month names of the date formats, the misspelled place names
 the orders dataset's description quotes. Then switching language with the button keeps the
@@ -143,7 +143,7 @@ with sync_playwright() as p:
       }
       A.exLeave({ restore: false }); return out; }''')
     failing = [x[:3] for x in r if x[1] != x[2] or not x[2]]
-    check('all 21 exercise solutions pass in English', len(r) == 21 and not failing, str(failing))
+    check('all 28 exercise solutions pass in English', len(r) == 28 and not failing, str(failing))
     th = {x[0]: thai_left(x[3])[:5] for x in r if thai_left(x[3])}
     check('exercise panels in English apart from data', not th, str(th)[:400])
     page.evaluate('PB.ui.openExercises && PB.ui.openExercises()'); page.wait_for_timeout(300)

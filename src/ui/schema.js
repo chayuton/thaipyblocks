@@ -119,6 +119,23 @@
     pb_grid_attr: (b) => (b.getFieldValue('ATTR') === 'cv_results_' ? table(['params', 'mean_test_score', 'std_test_score', 'rank_test_score'].map((name) => ({ name, hint: name === 'params' ? 'object' : 'float64' }))) : UNKNOWN),
     pb_similar_values: () => table([['value', 'object'], ['count', 'int64'], ['similar_to', 'object'], ['count_similar', 'int64'], ['ratio', 'float64']].map(([name, hint]) => ({ name, hint }))),
     pb_selectk_scores: () => table([['feature', 'object'], ['score', 'float64'], ['p_value', 'float64'], ['selected', 'bool']].map(([name, hint]) => ({ name, hint }))),
+    /* version 3.10: time series */
+    pb_decompose: (b, env) => {
+      const t = env.tableOf(varOf(b, 'DF')), c = t && t.cols.find((x) => x.name === b.getFieldValue('COL'));
+      return table([['observed', c ? c.hint : ''], ['trend', 'float64'], ['seasonal', 'float64'], ['resid', 'float64']].map(([name, hint]) => ({ name, hint })), TR('ส่วนประกอบของอนุกรมเวลา'));
+    },
+    /* the next periods: their dates (and so the month levels get_dummies will make) follow the last date of the data */
+    pb_future: (b, env) => {
+      const t = env.tableOf(varOf(b, 'DF')), dc = b.getFieldValue('DATE') || 'date', season = b.getFieldValue('SEASON');
+      const cols = [{ name: dc, hint: 'datetime64[us]' }, { name: 't', hint: 'int64' }].concat(season && season !== 'None' ? [{ name: season, hint: 'int64' }] : []);
+      let fut = null;
+      const s = t && colValues(t, dc);
+      if (s && s.dtype === 'datetime64[ns]' && s.length) {
+        try { fut = PB.futureFrame(PB.DataFrame.fromColumns({ [dc]: { values: s.values, dtype: 'datetime64[ns]' } }), dc, Number(b.getFieldValue('S')), b.getFieldValue('FREQ'), season === 'None' ? null : season); } catch (e) { fut = null; }
+      }
+      return table(fut ? cols.map((c) => Object.assign({ base: { df: fut, col: c.name } }, c)) : cols, TR('ช่วงเวลาถัดไป'));
+    },
+    pb_align_cols: (b, env) => { const r = env.tableOf(varOf(b, 'REF')); return r ? derived(env.tableOf(varOf(b, 'DF')) || r, r.cols.map((c) => ({ name: c.name, hint: c.hint, base: c.base }))) : UNKNOWN; },
     /* which k columns SelectKBest keeps is known only after it is fitted (the last run then tells) */
     pb_selectk_fit: () => UNKNOWN,
     pb_predict: () => UNKNOWN,
@@ -136,14 +153,49 @@
   }
   /* statement blocks → how they change the variables */
   const inPlace = (b, env, f) => { const n = varOf(b, 'DF'), t = env.tableOf(n); if (t) env.set(n, derived(t, f(t.cols))); };
+  /* the values a column holds, from the data it came from (null when unknown) */
+  function colValues(t, name) {
+    const c = t.cols.find((x) => x.name === name);
+    return c && c.base && c.base.df && c.base.df.has(c.base.col) ? c.base.df.col(c.base.col) : null;
+  }
+  const rowsOf = (t) => { const c = t.cols.find((x) => x.base && x.base.df); return c ? c.base.df.nrows : null; };
+  const withBase = (cols, name, base) => cols.map((c) => (c.name === name ? { name: c.name, hint: c.hint, base } : c));
+  const one = (name, values, dtype) => ({ df: PB.DataFrame.fromColumns({ [name]: { values, dtype } }), col: name });
+  /* version 3.10: a column computed from a date column (.dt.year / .month / .quarter / .dayofweek, pd.to_datetime)
+     gets values worked out from the data the date column came from, so get_dummies of it knows its levels */
+  const DT_PART = { year: 'year', month: 'month', quarter: 'quarter', dow: 'dayofweek' };
+  function derivedBase(v, env) {
+    if (!v) return null;
+    try {
+      if (v.type === 'pb_col_func' && DT_PART[v.getFieldValue('FN')]) {
+        const src = env.tableOf(varOf(v, 'DF')), s = src && colValues(src, v.getFieldValue('COL'));
+        if (s && s.dtype === 'datetime64[ns]') return one('_', s.dt(DT_PART[v.getFieldValue('FN')]).values, 'int64');
+      }
+      if (v.type === 'pb_to_datetime') {
+        const src = env.tableOf(varOf(v, 'DF')), s = src && colValues(src, v.getFieldValue('COL'));
+        if (s) return one('_', PB.toDatetime(s).values, 'datetime64[ns]');
+      }
+    } catch (e) { /* values that do not convert: the levels stay unknown */ }
+    return null;
+  }
+  const VAL_HINT = { pb_th_tokens: 'object', pb_ewm: 'float64', pb_shift: 'float64', pb_rolling: 'float64' };
   const STMT = {
     variables_set: (b, env) => {
       const v = b.getInputTargetBlock('VALUE'), name = varOf(b, 'VAR'), val = evalValue(v, env);
       env.set(name, val);
       if (v && (v.type === 'pb_dataset' || v.type === 'pb_read_file') && name) env.lastSource = name;
     },
-    pb_set_col: (b, env) => { const v = b.getInputTargetBlock('VAL'); inPlace(b, env, (cols) => addCol(cols, b.getFieldValue('NAME'), v && v.type === 'pb_th_tokens' ? 'object' : '')); },
-    pb_date_range: (b, env) => inPlace(b, env, (cols) => addCol(cols, b.getFieldValue('NAME'), 'datetime64[us]')),
+    pb_set_col: (b, env) => {
+      const v = b.getInputTargetBlock('VAL'), name = b.getFieldValue('NAME'), base = derivedBase(v, env);
+      inPlace(b, env, (cols) => { const out = addCol(cols, name, (v && VAL_HINT[v.type]) || (base ? PB.dtypeLabel(base.df.dtypeOf('_')) : '')); return base ? withBase(out, name, base) : out; });
+    },
+    pb_date_range: (b, env) => inPlace(b, env, (cols) => {
+      const name = b.getFieldValue('NAME'), out = addCol(cols, name, 'datetime64[us]'), n = rowsOf({ cols });
+      let dates = null;
+      try { if (n) dates = PB.dateRange(b.getFieldValue('START'), n, b.getFieldValue('FREQ')); } catch (e) { dates = null; }
+      return dates ? withBase(out, name, one('_', dates, 'datetime64[ns]')) : out;
+    }),
+    pb_time_index: (b, env) => inPlace(b, env, (cols) => addCol(cols, b.getFieldValue('NAME'), 'int64')),
     pb_lags: (b, env) => inPlace(b, env, (cols) => { let out = cols; for (let i = 1; i <= Number(b.getFieldValue('N')); i++) out = addCol(out, 'lag_' + i, 'float64'); return out; }),
     pb_label_encode: (b, env) => inPlace(b, env, (cols) => retype(cols, [b.getFieldValue('COL')], 'int64')),
     pb_to_numeric: (b, env) => inPlace(b, env, (cols) => retype(cols, [b.getFieldValue('COL')], 'float64')),
