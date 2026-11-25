@@ -64,7 +64,7 @@
     if (op === 'ADD') {
       if (typeof a === 'string' && typeof b === 'string') return a + b;
       if (Array.isArray(a) && Array.isArray(b)) return a.concat(b);
-      if (typeof a === 'string' || typeof b === 'string') throw PB.err('TypeError', `can only concatenate str (not "${PB.typeName(typeof a === 'string' ? b : a)}") to str`, TR('บวกข้อความกับตัวเลขไม่ได้'), TR('ใช้บล็อก "สร้างข้อความจาก" หรือแปลงด้วย str()'));
+      if (typeof a === 'string' || typeof b === 'string') throw PB.err('TypeError', `can only concatenate str (not "${PB.typeName(typeof a === 'string' ? b : a)}") to str`, TR('บวกข้อความกับตัวเลขไม่ได้'), TR('ใช้บล็อก "ต่อข้อความ" หรือแปลงด้วย str()'));
     }
     if (op === 'MULTIPLY') {
       if (typeof a === 'string' && Number.isInteger(b)) return a.repeat(Math.max(0, b));

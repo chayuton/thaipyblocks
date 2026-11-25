@@ -1809,7 +1809,7 @@ PB.I18N_EN = {
 "ใช้ตาราง {0} ที่โหลดไว้ให้แล้ว": "Using the loaded table {0}",
 "ใช้ตารางที่ได้จากบล็อก แยกแนวโน้มและฤดูกาล decompose(…)": "Use the table from the decompose(…) block",
 "ใช้ทฤษฎีความน่าจะเป็นของเบย์ ฝึกเร็วมาก ใช้ได้ดีแม้ข้อมูลน้อย": "Uses Bayes' theorem; very fast to train and works even with little data",
-"ใช้บล็อก \"สร้างข้อความจาก\" หรือแปลงด้วย str()": "Use a \"join text\" block or convert with str()",
+"ใช้บล็อก \"ต่อข้อความ\" หรือแปลงด้วย str()": "Use a \"join text\" block or convert with str()",
 "ใช้บล็อก dropna() หรือ fillna() จัดการค่าว่างในคอลัมน์ '{0}' ก่อน": "Handle the missing values in column '{0}' with a dropna() or fillna() block first",
 "ใช้บล็อก pd.get_dummies หรือ LabelEncoder แปลงคอลัมน์ '{0}' เป็นตัวเลข หรือ drop คอลัมน์นี้ออก": "Use a pd.get_dummies or LabelEncoder block to turn column '{0}' into numbers, or drop the column",
 "ใช้บล็อก print(\"SVC + ปรับสเกล:\", model.score(X_test, y_test))": "Use print(\"SVC + scaling:\", model.score(X_test, y_test))",

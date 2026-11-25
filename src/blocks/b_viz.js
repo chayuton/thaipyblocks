@@ -288,7 +288,8 @@
   def('pb_type', {
     cat: 'pybasic', out: true, py: 'type( {@X} ).__name__', f: { X: {} }, tip: TR('ชื่อชนิดข้อมูลของค่า'),
     gen: (b, G) => [`type(${G.in(b, 'X')}).__name__`, python.Order.MEMBER],
-    *run(b, I) { return PB.typeName(yield* I.val(b, 'X', null)); },
+    /* valRaw keeps a whole float boxed (10 / 2 = 5.0), so its type is float as in Python, not int */
+    *run(b, I) { return PB.typeName(yield* I.valRaw(b, 'X', null)); },
     ex: (b, X) => T(X, `ชื่อชนิดข้อมูลของ${X.in(b, 'X')}`, `the type name of ${X.in(b, 'X')}`),
   });
   def('pb_range', {
