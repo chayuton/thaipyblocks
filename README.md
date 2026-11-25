@@ -1,6 +1,6 @@
 # ThaiPyBlocks
 
-**รุ่นเผยแพร่ 1.2 · v1.2.0** (แอปเวอร์ชัน 3.10) · ภาษาไทย / English
+**รุ่นเผยแพร่ 1.2 · v1.2.1** (แอปเวอร์ชัน 3.10.1) · ภาษาไทย / English
 
 ![ThaiPyBlocks: ต่อบล็อกทางซ้าย ผลลัพธ์แบบ Jupyter ทางขวา](docs/screenshot.png)
 
@@ -14,7 +14,7 @@ Time series get trend lines, moving averages, seasonal decomposition and trend +
 It opens on a blank start screen: a new program, your own data, a sample project or an exercise, or carry on with the work saved in the browser.
 The whole app is one static page, served as-is by GitHub Pages or Vercel. This repository also holds the test suites and two classroom worksheets.*
 
-**เปิดใช้งาน:** <https://chayuton.github.io/thaipyblocks/> (GitHub Pages) · <https://thaipyblocks.vercel.app/> (Vercel) · **ดาวน์โหลด:** [Releases → v1.2.0](https://github.com/chayuton/thaipyblocks/releases/tag/v1.2.0)
+**เปิดใช้งาน:** <https://chayuton.github.io/thaipyblocks/> (GitHub Pages) · <https://thaipyblocks.vercel.app/> (Vercel) · **ดาวน์โหลด:** [Releases → v1.2.1](https://github.com/chayuton/thaipyblocks/releases/tag/v1.2.1)
 · **ใบงาน:** [K-Means](https://chayuton.github.io/thaipyblocks/worksheets/worksheet1_kmeans.pdf) · [Neural Network](https://chayuton.github.io/thaipyblocks/worksheets/worksheet2_neural_network.pdf)
 
 ---
@@ -71,7 +71,7 @@ The whole app is one static page, served as-is by GitHub Pages or Vercel. This r
 
 ### แบบที่ 2: repo ใหม่จากไฟล์ zip (อัปโหลดผ่านหน้าเว็บ)
 
-1. ดาวน์โหลด `thaipyblocks-v1.2.0.zip` จาก [Releases](https://github.com/chayuton/thaipyblocks/releases/tag/v1.2.0) แล้วแตกไฟล์ จะได้โฟลเดอร์ `thaipyblocks`
+1. ดาวน์โหลด `thaipyblocks-v1.2.1.zip` จาก [Releases](https://github.com/chayuton/thaipyblocks/releases/tag/v1.2.1) แล้วแตกไฟล์ จะได้โฟลเดอร์ `thaipyblocks`
 2. ที่ github.com กด **New** (หรือ **+ → New repository**) ตั้งชื่อ เช่น `thaipyblocks` เลือก **Public** แล้วกด **Create repository**
 3. หน้าเว็บของ GitHub อัปโหลดได้ครั้งละไม่เกิน 100 ไฟล์ ชุดนี้มีประมาณ 109 ไฟล์ จึงอัปโหลด 2 รอบ
    (ลิงก์ **uploading an existing file** หรือ **Add file → Upload files**) ใช้ Chrome, Edge หรือ Firefox
@@ -180,7 +180,7 @@ sh test/run_all.sh
 | `upload_test.py` | อ่านไฟล์ใน `test/files` (CSV, ตัวคั่น `;`, TIS-620, Excel, ข้อความ, อนุกรมเวลา, ภาพ) แล้วรันโปรแกรมจากไฟล์ เทียบกับ Python | 23/23 |
 | `wizard_modes.py` | ตัวช่วยเลือกโมเดลแบบ cross-validation, GridSearchCV และตัวเลือกทำความสะอาด เทียบกับ Python | 15/15 |
 | `exercises_test.py` | แบบฝึกหัด: โจทย์เริ่มต้นไม่ผ่าน เฉลยผ่าน และโค้ดของเฉลยรันใน Python | 28/28 |
-| `clean_test.py` | ตัวช่วยทำความสะอาดข้อมูลและบล็อกหมวดทำความสะอาด: ทุกบรรทัดที่พิมพ์ตรงกับ pandas | 24 โปรแกรม: ตรงทุกบรรทัด ยกเว้น 3 บรรทัดที่ต่างเฉพาะเศษทศนิยมระดับ 1e-16 และตาราง SVR ของ mpg ที่ต่างที่ทศนิยมตำแหน่งที่ 6 บนเครื่องที่ใช้ตรวจรุ่น 1.2.0 (ต่างแบบเดียวกันตั้งแต่ก่อนแก้ไขรุ่นนี้) |
+| `clean_test.py` | ตัวช่วยทำความสะอาดข้อมูลและบล็อกหมวดทำความสะอาด: ทุกบรรทัดที่พิมพ์ตรงกับ pandas | 24 โปรแกรม: ตรงทุกบรรทัด ยกเว้น 3 บรรทัดที่ต่างเฉพาะเศษทศนิยมระดับ 1e-16 และตาราง SVR ของ mpg ที่ต่างที่ทศนิยมตำแหน่งที่ 6 บนเครื่องที่ใช้ตรวจรุ่น 1.2.0 และ 1.2.1 (ต่างแบบเดียวกันตั้งแต่ก่อนแก้ไขรุ่น 1.2.0) |
 | `report_test.py` | รายงาน HTML และชุดโค้ด .zip ของโครงงานตัวอย่าง | ผ่าน |
 | `pdf_test.py` | ส่งออก PDF: หน้า A4 ถูกต้อง ค้นหาข้อความไทยได้ ธีมมืด จอมือถือ เบราว์เซอร์รุ่นเก่า | 47/47 |
 | `ux_test.py` | ใช้งานจริง: ดาวน์โหลด แก้บล็อก undo ลากบล็อก รันทีละขั้น ตัวช่วยผ่านการคลิก ข้อผิดพลาดภาษาไทย | 52/52 |
